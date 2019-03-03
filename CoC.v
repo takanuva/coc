@@ -221,6 +221,24 @@ Defined.
 
 Hint Resolve star_application_right: coc.
 
+Lemma star_beta_left:
+  forall t b1 b2 x,
+  [b1 =>* b2] -> [(\t, b1) @ x =>* b2[x/]].
+Proof.
+  eauto with coc.
+Defined.
+
+Hint Resolve star_beta_left.
+
+Lemma star_beta_right:
+  forall t b x1 x2,
+  [x1 =>* x2] -> [(\t, b) @ x1 =>* b[x2/]].
+Proof.
+  eauto with coc.
+Defined.
+
+Hint Resolve star_beta_right.
+
 Definition conv: pseudoterm -> pseudoterm -> Prop :=
   clos_refl_sym_trans _ step.
 
@@ -265,10 +283,32 @@ Proof.
   auto with coc.
 Defined.
 
+Hint Unfold transp: coc.
+
 Lemma subterm_and_step_commute:
-  commut pseudoterm subterm step.
+  commut _ subterm (transp _ step).
 Proof.
   induction 1; eauto with coc.
+Defined.
+
+Definition normal (a: pseudoterm): Prop :=
+  forall b, ~[a => b].
+
+Definition strongly_normalizing: pseudoterm -> Prop :=
+  Acc (transp _ step).
+
+Lemma subterm_of_normalizing_is_normalizing:
+  forall a,
+  strongly_normalizing a ->
+  forall b,
+  subterm b a -> strongly_normalizing b.
+Proof.
+  compute.
+  simple induction 1.
+  intros.
+  constructor.
+  intros.
+  edestruct subterm_and_step_commute; eauto.
 Defined.
 
 Inductive parallel: pseudoterm -> pseudoterm -> Prop :=
@@ -313,19 +353,5 @@ Lemma star_parallel:
   forall a b, parallel a b -> [a =>* b].
 Proof.
   intros.
-  induction H.
-  - eapply star_tran.
-    eapply star_tran.
-    eapply star_application_left.
-    apply star_lambda_right.
-    eassumption.
-    eapply star_application_right.
-    eassumption.
-    auto with coc.
-  - auto with coc.
-  - auto with coc.
-  - auto with coc.
-  - eauto with coc.
-  - eauto with coc.
-  - eauto with coc.
+  induction H; eauto with coc.
 Defined.
