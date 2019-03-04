@@ -396,6 +396,34 @@ Defined.
 
 Hint Resolve parallel_step: coc.
 
+(******************************************************************************)
+
+Lemma lift_bound_ge:
+  forall i k n,
+  k <= n ->
+  lift i k n = i + n.
+Proof.
+  intros; simpl.
+  destruct (le_gt_dec k n).
+  - auto with arith.
+  - absurd (k <= n); auto with arith.
+Defined.
+
+Hint Resolve lift_bound_ge: coc.
+
+Lemma lift_bound_lt:
+  forall i k n,
+  k > n ->
+  lift i k n = n.
+Proof.
+  intros; simpl.
+  destruct (le_gt_dec k n).
+  - absurd (k <= n); auto with arith.
+  - trivial.
+Defined.
+
+Hint Resolve lift_bound_lt: coc.
+
 Lemma lift_distributes_over_subst:
   forall a b i k,
   lift i k (subst b 0 a) = subst (lift i k b) 0 (lift i (S k) a).
@@ -465,8 +493,9 @@ Proof.
     auto with coc.
 Defined.
 
-(*
+Hint Resolve parallel_subst: coc.
 
+(*
 Definition confluent {T: Type} (R: T -> T -> Prop): Prop :=
   commut _ R (transp _ R).
 
