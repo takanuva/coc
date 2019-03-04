@@ -402,6 +402,12 @@ Lemma lift_distributes_over_subst:
 (* XXX *)
 Admitted.
 
+Lemma subst_distributes_over_itself:
+  forall P N M k,
+  subst P k (subst N 0 M) = subst (subst P k N) 0 (subst P (S k) M).
+(* XXX *)
+Admitted.
+
 Lemma parallel_lift:
   forall a b,
   parallel a b ->
@@ -411,8 +417,9 @@ Proof.
   simple induction 1.
   - intros.
     rewrite lift_distributes_over_application.
+    rewrite lift_distributes_over_lambda.
     rewrite lift_distributes_over_subst.
-    simpl; auto with coc.
+    auto with coc.
   - auto with coc.
   - auto with coc.
   - auto with coc.
@@ -427,7 +434,7 @@ Proof.
     auto with coc.
 Defined.
 
-(*
+Hint Resolve parallel_lift: coc.
 
 Lemma parallel_subst:
   forall a b,
@@ -437,29 +444,28 @@ Lemma parallel_subst:
   forall k,
   parallel (subst c k a) (subst d k b).
 Proof.
-  simple induction a.
+  simple induction 1.
   - intros.
-    inversion_clear H; eauto with coc.
-  - intros.
-    inversion_clear H; eauto with coc.
-  - intros.
-    inversion_clear H.
-    unfold subst.
-    destruct (lt_eq_lt_dec k n) as [ [ _ | _ ] | _ ]; auto with coc.
-    apply parallel_lift; assumption.
-  - intros.
-    inversion_clear H1.
-    do 2 rewrite subst_distributes_over_pi.
-    eauto with coc.
-  - intros.
-    inversion_clear H1.
-    do 2 rewrite subst_distributes_over_lambda.
-    eauto with coc.
-  - intros.
-    inversion_clear H1.
     rewrite subst_distributes_over_application.
     rewrite subst_distributes_over_lambda.
-Admitted.
+    rewrite subst_distributes_over_itself.
+    auto with coc.
+  - auto with coc.
+  - auto with coc.
+  - intros; unfold subst.
+    destruct (lt_eq_lt_dec k n) as [ [ _ | _ ] | _ ]; auto with coc.
+  - intros.
+    do 2 rewrite subst_distributes_over_pi.
+    auto with coc.
+  - intros.
+    do 2 rewrite subst_distributes_over_lambda.
+    auto with coc.
+  - intros.
+    do 2 rewrite subst_distributes_over_application.
+    auto with coc.
+Defined.
+
+(*
 
 Definition confluent {T: Type} (R: T -> T -> Prop): Prop :=
   commut _ R (transp _ R).
