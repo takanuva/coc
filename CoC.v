@@ -59,9 +59,7 @@ Lemma lift_zero_e_equals_e:
   forall e k,
   lift 0 k e = e.
 Proof.
-  induction e.
-  - trivial.
-  - trivial.
+  induction e; auto with coc.
   - intro; unfold lift.
     destruct (le_gt_dec k n); reflexivity.
   - unfold lift in * |- *; intro.
@@ -77,6 +75,35 @@ Proof.
     rewrite (IHe2 k).
     reflexivity.
 Defined.
+
+Hint Resolve lift_zero_e_equals_e: coc.
+
+Lemma lift_distributes_over_pi:
+  forall t b i k,
+  lift i k (pi t b) = pi (lift i k t) (lift i (S k) b).
+Proof.
+  eauto with coc.
+Defined.
+
+Hint Resolve lift_distributes_over_pi: coc.
+
+Lemma lift_distributes_over_lambda:
+  forall t b i k,
+  lift i k (lambda t b) = lambda (lift i k t) (lift i (S k) b).
+Proof.
+  eauto with coc.
+Defined.
+
+Hint Resolve lift_distributes_over_lambda: coc.
+
+Lemma lift_distributes_over_application:
+  forall f x i k,
+  lift i k (application f x) = application (lift i k f) (lift i k x).
+Proof.
+  eauto with coc.
+Defined.
+
+Hint Resolve lift_distributes_over_application: coc.
 
 Fixpoint subst (p: pseudoterm) (k: nat) (q: pseudoterm): pseudoterm :=
   match q with
@@ -99,6 +126,33 @@ Fixpoint subst (p: pseudoterm) (k: nat) (q: pseudoterm): pseudoterm :=
   end.
 
 Notation "q [ p /]" := (subst p 0 q) (at level 1, format "q [ p /]"): coc_scope.
+
+Lemma subst_distributes_over_pi:
+  forall t b i k,
+  subst i k (pi t b) = pi (subst i k t) (subst i (S k) b).
+Proof.
+  eauto with coc.
+Defined.
+
+Hint Resolve subst_distributes_over_pi: coc.
+
+Lemma subst_distributes_over_lambda:
+  forall t b i k,
+  subst i k (lambda t b) = lambda (subst i k t) (subst i (S k) b).
+Proof.
+  eauto with coc.
+Defined.
+
+Hint Resolve subst_distributes_over_lambda.
+
+Lemma subst_distributes_over_application:
+  forall f x i k,
+  subst i k (application f x) = application (subst i k f) (subst i k x).
+Proof.
+  eauto with coc.
+Defined.
+
+Hint Resolve subst_distributes_over_application.
 
 Inductive step: pseudoterm -> pseudoterm -> Prop :=
   | step_beta:
@@ -161,7 +215,6 @@ Hint Resolve star_symm: coc.
 Lemma star_tran:
   forall a b c, [a =>* b] -> [b =>* c] -> [a =>* c].
 Proof.
-  intros.
   eauto with coc.
 Defined.
 
@@ -221,24 +274,6 @@ Defined.
 
 Hint Resolve star_application_right: coc.
 
-Lemma star_beta_left:
-  forall t b1 b2 x,
-  [b1 =>* b2] -> [(\t, b1) @ x =>* b2[x/]].
-Proof.
-  eauto with coc.
-Defined.
-
-Hint Resolve star_beta_left.
-
-Lemma star_beta_right:
-  forall t b x1 x2,
-  [x1 =>* x2] -> [(\t, b) @ x1 =>* b[x2/]].
-Proof.
-  eauto with coc.
-Defined.
-
-Hint Resolve star_beta_right.
-
 Definition conv: pseudoterm -> pseudoterm -> Prop :=
   clos_refl_sym_trans _ step.
 
@@ -253,11 +288,15 @@ Proof.
   auto with coc.
 Defined.
 
+Hint Resolve conv_beta: coc.
+
 Lemma conv_step:
   forall a b, [a => b] -> [a <=> b].
 Proof.
   auto with coc.
 Defined.
+
+Hint Resolve conv_step: coc.
 
 Lemma conv_star:
   forall a b, [a =>* b] -> [a <=> b].
@@ -265,11 +304,15 @@ Proof.
   induction 1; eauto with coc.
 Defined.
 
+Hint Resolve conv_star: coc.
+
 Lemma conv_refl:
   forall a, [a <=> a].
 Proof.
   auto with coc.
 Defined.
+
+Hint Resolve conv_refl: coc.
 
 Lemma conv_tran:
   forall a b c, [a <=> b] -> [b <=> c] -> [a <=> c].
@@ -277,19 +320,23 @@ Proof.
   eauto with coc.
 Defined.
 
+Hint Resolve conv_tran: coc.
+
 Lemma conv_symm:
   forall a b, [a <=> b] -> [b <=> a].
 Proof.
   auto with coc.
 Defined.
 
-Hint Unfold transp: coc.
+Hint Resolve conv_symm: coc.
 
 Lemma subterm_and_step_commute:
   commut _ subterm (transp _ step).
 Proof.
-  induction 1; eauto with coc.
+  induction 1; compute; eauto with coc.
 Defined.
+
+Hint Unfold transp: coc.
 
 Definition normal (a: pseudoterm): Prop :=
   forall b, ~[a => b].
@@ -349,9 +396,75 @@ Defined.
 
 Hint Resolve parallel_step: coc.
 
-Lemma star_parallel:
-  forall a b, parallel a b -> [a =>* b].
+Lemma lift_distributes_over_subst:
+  forall a b i k,
+  lift i k (subst b 0 a) = subst (lift i k b) 0 (lift i (S k) a).
+(* XXX *)
+Admitted.
+
+Lemma parallel_lift:
+  forall a b,
+  parallel a b ->
+  forall i k,
+  parallel (lift i k a) (lift i k b).
 Proof.
-  intros.
-  induction H; eauto with coc.
+  simple induction 1.
+  - intros.
+    rewrite lift_distributes_over_application.
+    rewrite lift_distributes_over_subst.
+    simpl; auto with coc.
+  - auto with coc.
+  - auto with coc.
+  - auto with coc.
+  - intros.
+    do 2 rewrite lift_distributes_over_pi.
+    auto with coc.
+  - intros.
+    do 2 rewrite lift_distributes_over_lambda.
+    auto with coc.
+  - intros.
+    do 2 rewrite lift_distributes_over_application.
+    auto with coc.
 Defined.
+
+(*
+
+Lemma parallel_subst:
+  forall a b,
+  parallel a b ->
+  forall c d,
+  parallel c d ->
+  forall k,
+  parallel (subst c k a) (subst d k b).
+Proof.
+  simple induction a.
+  - intros.
+    inversion_clear H; eauto with coc.
+  - intros.
+    inversion_clear H; eauto with coc.
+  - intros.
+    inversion_clear H.
+    unfold subst.
+    destruct (lt_eq_lt_dec k n) as [ [ _ | _ ] | _ ]; auto with coc.
+    apply parallel_lift; assumption.
+  - intros.
+    inversion_clear H1.
+    do 2 rewrite subst_distributes_over_pi.
+    eauto with coc.
+  - intros.
+    inversion_clear H1.
+    do 2 rewrite subst_distributes_over_lambda.
+    eauto with coc.
+  - intros.
+    inversion_clear H1.
+    rewrite subst_distributes_over_application.
+    rewrite subst_distributes_over_lambda.
+Admitted.
+
+Definition confluent {T: Type} (R: T -> T -> Prop): Prop :=
+  commut _ R (transp _ R).
+
+Lemma parallel_is_confluent:
+  confluent parallel.
+Admitted.
+*)
