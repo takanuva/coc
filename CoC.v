@@ -495,11 +495,54 @@ Defined.
 
 Hint Resolve parallel_subst: coc.
 
-(*
 Definition confluent {T: Type} (R: T -> T -> Prop): Prop :=
   commut _ R (transp _ R).
 
+(******************************************************************************)
+
+Lemma inv_par_red_abs:
+  forall P: Prop,
+  forall t1 b1 x,
+  parallel (\t1, b1) x ->
+  (forall t2 b2, x = lambda t2 b2 -> parallel b1 b2 -> P) -> P.
+Proof.
+  inversion_clear 1; intros.
+  eapply H; eauto with coc.
+Defined.
+
 Lemma parallel_is_confluent:
   confluent parallel.
+Proof.
+  compute.
+  simple induction 1.
+  (* Case: parallel_beta. *)
+  - intros.
+    inversion_clear H4.
+    + eelim H1; eelim H3; eauto with coc.
+    + inversion_clear H5.
+      eelim H1; eelim H3; eauto with coc.
+  (* Case: parallel_type. *)
+  - eauto with coc.
+  (* Case: parallel_prop. *)
+  - eauto with coc.
+  (* Case: parallel_bound. *)
+  - eauto with coc.
+  (* Case: parallel_pi. *)
+  - intros.
+    inversion_clear H4.
+    eelim H1; eelim H3; eauto with coc.
+  (* Case: parallel_lambda. *)
+  - intros.
+    inversion_clear H4.
+    eelim H1; eelim H3; eauto with coc.
+  (* Case: parallel_application. *)
+  - intros.
+    (*generalize H0 H2; clear H0 H2.
+    inversion_clear H4.
+    + inversion_clear 1.
+      eexists.
+      * apply parallel_beta; admit.
+      * apply parallel_subst; admit.
+    + eelim H1; eelim H3; eauto with coc.*)
+    admit.
 Admitted.
-*)
