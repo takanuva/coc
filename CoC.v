@@ -586,7 +586,7 @@ Proof.
   exact parallel_is_confluent.
 Qed.
 
-Lemma transtive_parallel_star:
+Lemma transitive_parallel_star:
   forall a b, [a =>* b] -> clos_trans _ parallel a b.
 Proof.
   simple induction 1.
@@ -611,8 +611,8 @@ Proof.
     exists x0.
     apply star_transitive_parallel; auto.
     apply star_transitive_parallel; auto.
-  - eapply transtive_parallel_star; auto.
-  - eapply transtive_parallel_star; auto.
+  - eapply transitive_parallel_star; auto.
+  - eapply transitive_parallel_star; auto.
 Qed.
 
 Definition church_rosser {T} (R: T -> T -> Prop): Prop :=
@@ -620,7 +620,7 @@ Definition church_rosser {T} (R: T -> T -> Prop): Prop :=
   clos_refl_sym_trans T R a b ->
   exists2 c: T, clos_refl_trans T R a c & clos_refl_trans T R b c.
 
-Lemma confluent_is_church_rosser {T} (R: T -> T -> Prop):
+Lemma confluency_implies_church_rosser {T} (R: T -> T -> Prop):
   confluent (clos_refl_trans _ R) -> church_rosser R.
 Proof.
   simple induction 2; intros.
@@ -641,6 +641,6 @@ Qed.
 Theorem step_is_church_rosser:
   church_rosser step.
 Proof.
-  apply confluent_is_church_rosser.
+  apply confluency_implies_church_rosser.
   exact star_is_confluent.
 Qed.
