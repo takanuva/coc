@@ -498,51 +498,68 @@ Hint Resolve parallel_subst: coc.
 Definition confluent {T: Type} (R: T -> T -> Prop): Prop :=
   commut _ R (transp _ R).
 
-(******************************************************************************)
-
-Lemma inv_par_red_abs:
-  forall P: Prop,
-  forall t1 b1 x,
-  parallel (\t1, b1) x ->
-  (forall t2 b2, x = lambda t2 b2 -> parallel b1 b2 -> P) -> P.
-Proof.
-  inversion_clear 1; intros.
-  eapply H; eauto with coc.
-Defined.
-
 Lemma parallel_is_confluent:
   confluent parallel.
 Proof.
   compute.
-  simple induction 1.
+  induction 1.
   (* Case: parallel_beta. *)
   - intros.
-    inversion_clear H4.
-    + eelim H1; eelim H3; eauto with coc.
-    + inversion_clear H5.
-      eelim H1; eelim H3; eauto with coc.
+    inversion_clear H1.
+    + destruct (IHparallel1 _ H2) as (b4, ?, ?).
+      destruct (IHparallel2 _ H3) as (x4, ?, ?).
+      exists (subst x4 0 b4); auto with coc.
+    + inversion_clear H2.
+      destruct (IHparallel1 _ H4) as (b4, ?, ?).
+      destruct (IHparallel2 _ H3) as (x4, ?, ?).
+      exists (subst x4 0 b4); auto with coc.
   (* Case: parallel_type. *)
-  - eauto with coc.
+  - intros.
+    inversion_clear H.
+    exists type; auto with coc.
   (* Case: parallel_prop. *)
-  - eauto with coc.
+  - intros.
+    inversion_clear H.
+    exists prop; auto with coc.
   (* Case: parallel_bound. *)
-  - eauto with coc.
+  - intros.
+    inversion_clear H.
+    exists n; auto with coc.
   (* Case: parallel_pi. *)
   - intros.
-    inversion_clear H4.
-    eelim H1; eelim H3; eauto with coc.
+    inversion_clear H1.
+    destruct (IHparallel1 _ H2) as (t4, ?, ?).
+    destruct (IHparallel2 _ H3) as (b4, ?, ?).
+    exists (pi t4 b4); auto with coc.
   (* Case: parallel_lambda. *)
   - intros.
-    inversion_clear H4.
-    eelim H1; eelim H3; eauto with coc.
+    inversion_clear H1.
+    destruct (IHparallel1 _ H2) as (t4, ?, ?).
+    destruct (IHparallel2 _ H3) as (b4, ?, ?).
+    exists (lambda t4 b4); auto with coc.
   (* Case: parallel_application. *)
   - intros.
-    (*generalize H0 H2; clear H0 H2.
-    inversion_clear H4.
-    + inversion_clear 1.
-      eexists.
-      * apply parallel_beta; admit.
-      * apply parallel_subst; admit.
-    + eelim H1; eelim H3; eauto with coc.*)
-    admit.
-Admitted.
+    inversion H1.
+    + destruct H3, H2, H5.
+      rename t into t1, x0 into x1, b2 into b3.
+      inversion H.
+      destruct H2, H3, H7.
+      rename t0 into t1, b0 into b1.
+      edestruct IHparallel1.
+      apply parallel_lambda.
+      apply parallel_refl.
+      exact H4.
+      rename x into f4.
+      inversion H2.
+      destruct H7, H9, H11.
+      rename t0 into t2, b0 into b2.
+      inversion H3.
+      destruct H7, H9, H11, H14.
+      rename t0 into t1, b0 into b3, b5 into b4.
+      destruct (IHparallel2 _ H6) as (x4, ?, ?).
+      exists (subst x4 0 b4); eauto with coc.
+    + destruct H2, H3, H5.
+      destruct (IHparallel1 _ H4) as (f4, ?, ?).
+      destruct (IHparallel2 _ H6) as (x4, ?, ?).
+      exists (application f4 x4); auto with coc.
+Defined.
