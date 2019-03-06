@@ -644,3 +644,36 @@ Proof.
   apply confluency_implies_church_rosser.
   exact star_is_confluent.
 Qed.
+
+(******************************************************************************)
+
+Lemma inversion_star_normal:
+  forall a b,
+  [a =>* b] -> normal a ->
+  forall P: Prop,
+  (a = b -> P) -> P.
+Proof.
+  simple induction 1; intros.
+  (* Case: step. *)
+  - absurd (step x y); auto.
+  (* Case: refl. *)
+  - auto.
+  (* Case: tran. *)
+  - apply H1.
+    assumption.
+    intro.
+    destruct H6.
+    apply H3; auto.
+Qed.
+
+Lemma normal_form_is_unique:
+  forall a b,
+  [a <=> b] -> normal a -> normal b -> a = b.
+Proof.
+  intros.
+  destruct step_is_church_rosser with a b.
+  - assumption.
+  - apply inversion_star_normal with a x;
+      apply inversion_star_normal with b x;
+      auto; congruence.
+Qed.
