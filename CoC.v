@@ -74,7 +74,7 @@ Proof.
     rewrite (IHe1 k).
     rewrite (IHe2 k).
     reflexivity.
-Defined.
+Qed.
 
 Hint Resolve lift_zero_e_equals_e: coc.
 
@@ -83,7 +83,7 @@ Lemma lift_distributes_over_pi:
   lift i k (pi t b) = pi (lift i k t) (lift i (S k) b).
 Proof.
   eauto with coc.
-Defined.
+Qed.
 
 Hint Resolve lift_distributes_over_pi: coc.
 
@@ -92,7 +92,7 @@ Lemma lift_distributes_over_lambda:
   lift i k (lambda t b) = lambda (lift i k t) (lift i (S k) b).
 Proof.
   eauto with coc.
-Defined.
+Qed.
 
 Hint Resolve lift_distributes_over_lambda: coc.
 
@@ -101,7 +101,7 @@ Lemma lift_distributes_over_application:
   lift i k (application f x) = application (lift i k f) (lift i k x).
 Proof.
   eauto with coc.
-Defined.
+Qed.
 
 Hint Resolve lift_distributes_over_application: coc.
 
@@ -132,7 +132,7 @@ Lemma subst_distributes_over_pi:
   subst i k (pi t b) = pi (subst i k t) (subst i (S k) b).
 Proof.
   eauto with coc.
-Defined.
+Qed.
 
 Hint Resolve subst_distributes_over_pi: coc.
 
@@ -141,7 +141,7 @@ Lemma subst_distributes_over_lambda:
   subst i k (lambda t b) = lambda (subst i k t) (subst i (S k) b).
 Proof.
   eauto with coc.
-Defined.
+Qed.
 
 Hint Resolve subst_distributes_over_lambda.
 
@@ -150,7 +150,7 @@ Lemma subst_distributes_over_application:
   subst i k (application f x) = application (subst i k f) (subst i k x).
 Proof.
   eauto with coc.
-Defined.
+Qed.
 
 Hint Resolve subst_distributes_over_application.
 
@@ -192,7 +192,7 @@ Lemma star_beta:
   [(\t, b) @ x =>* b[x/]].
 Proof.
   auto with coc.
-Defined.
+Qed.
 
 Hint Resolve star_beta: coc.
 
@@ -200,7 +200,7 @@ Lemma star_step:
   forall a b, [a => b] -> [a =>* b].
 Proof.
   auto with coc.
-Defined.
+Qed.
 
 Hint Resolve star_step: coc.
 
@@ -208,7 +208,7 @@ Lemma star_symm:
   forall a, [a =>* a].
 Proof.
   auto with coc.
-Defined.
+Qed.
 
 Hint Resolve star_symm: coc.
 
@@ -216,7 +216,7 @@ Lemma star_tran:
   forall a b c, [a =>* b] -> [b =>* c] -> [a =>* c].
 Proof.
   eauto with coc.
-Defined.
+Qed.
 
 Hint Resolve star_tran: coc.
 
@@ -225,7 +225,7 @@ Lemma star_pi_left:
   [t1 =>* t2] -> [\/t1, b =>* \/t2, b].
 Proof.
   induction 1; eauto with coc.
-Defined.
+Qed.
 
 Hint Resolve star_pi_left: coc.
 
@@ -234,7 +234,7 @@ Lemma star_pi_right:
   [b1 =>* b2] -> [\/t, b1 =>* \/t, b2].
 Proof.
   induction 1; eauto with coc.
-Defined.
+Qed.
 
 Hint Resolve star_pi_right: coc.
 
@@ -243,7 +243,7 @@ Lemma star_lambda_left:
   [t1 =>* t2] -> [\t1, b =>* \t2, b].
 Proof.
   induction 1; eauto with coc.
-Defined.
+Qed.
 
 Hint Resolve star_lambda_left: coc.
 
@@ -252,7 +252,7 @@ Lemma star_lambda_right:
   [b1 =>* b2] -> [\t, b1 =>* \t, b2].
 Proof.
   induction 1; eauto with coc.
-Defined.
+Qed.
 
 Hint Resolve star_lambda_right: coc.
 
@@ -261,7 +261,7 @@ Lemma star_application_left:
   [f1 =>* f2] -> [f1 @ x =>* f2 @ x].
 Proof.
   induction 1; eauto with coc.
-Defined.
+Qed.
 
 Hint Resolve star_application_left: coc.
 
@@ -270,7 +270,7 @@ Lemma star_application_right:
   [x1 =>* x2] -> [f @ x1 =>* f @ x2].
 Proof.
   induction 1; eauto with coc.
-Defined.
+Qed.
 
 Hint Resolve star_application_right: coc.
 
@@ -286,7 +286,7 @@ Lemma conv_beta:
   [(\t, b) @ x <=> b[x/]].
 Proof.
   auto with coc.
-Defined.
+Qed.
 
 Hint Resolve conv_beta: coc.
 
@@ -294,7 +294,7 @@ Lemma conv_step:
   forall a b, [a => b] -> [a <=> b].
 Proof.
   auto with coc.
-Defined.
+Qed.
 
 Hint Resolve conv_step: coc.
 
@@ -302,7 +302,7 @@ Lemma conv_star:
   forall a b, [a =>* b] -> [a <=> b].
 Proof.
   induction 1; eauto with coc.
-Defined.
+Qed.
 
 Hint Resolve conv_star: coc.
 
@@ -310,7 +310,7 @@ Lemma conv_refl:
   forall a, [a <=> a].
 Proof.
   auto with coc.
-Defined.
+Qed.
 
 Hint Resolve conv_refl: coc.
 
@@ -318,7 +318,7 @@ Lemma conv_tran:
   forall a b c, [a <=> b] -> [b <=> c] -> [a <=> c].
 Proof.
   eauto with coc.
-Defined.
+Qed.
 
 Hint Resolve conv_tran: coc.
 
@@ -326,7 +326,7 @@ Lemma conv_symm:
   forall a b, [a <=> b] -> [b <=> a].
 Proof.
   auto with coc.
-Defined.
+Qed.
 
 Hint Resolve conv_symm: coc.
 
@@ -334,7 +334,7 @@ Lemma subterm_and_step_commute:
   commut _ subterm (transp _ step).
 Proof.
   induction 1; compute; eauto with coc.
-Defined.
+Qed.
 
 Hint Unfold transp: coc.
 
@@ -356,7 +356,7 @@ Proof.
   constructor.
   intros.
   edestruct subterm_and_step_commute; eauto.
-Defined.
+Qed.
 
 Inductive parallel: pseudoterm -> pseudoterm -> Prop :=
   | parallel_beta:
@@ -384,7 +384,7 @@ Lemma parallel_refl:
   forall e, parallel e e.
 Proof.
   simple induction e; auto with coc.
-Defined.
+Qed.
 
 Hint Resolve parallel_refl: coc.
 
@@ -392,7 +392,7 @@ Lemma parallel_step:
   forall a b, [a => b] -> parallel a b.
 Proof.
   induction 1; auto with coc.
-Defined.
+Qed.
 
 Hint Resolve parallel_step: coc.
 
@@ -409,7 +409,7 @@ Proof.
     apply star_application_right.
     exact H3.
     apply star_beta.
-Defined.
+Qed.
 
 Hint Resolve star_parallel: coc.
 
@@ -449,7 +449,7 @@ Proof.
   - intros.
     do 2 rewrite lift_distributes_over_application.
     auto with coc.
-Defined.
+Qed.
 
 Hint Resolve parallel_lift: coc.
 
@@ -481,11 +481,11 @@ Proof.
   - intros.
     do 2 rewrite subst_distributes_over_application.
     auto with coc.
-Defined.
+Qed.
 
 Hint Resolve parallel_subst: coc.
 
-Definition confluent {T: Type} (R: T -> T -> Prop): Prop :=
+Definition confluent {T} (R: T -> T -> Prop): Prop :=
   commut _ R (transp _ R).
 
 Lemma parallel_is_confluent:
@@ -552,7 +552,7 @@ Proof.
       destruct (IHparallel1 _ H4) as (f4, ?, ?).
       destruct (IHparallel2 _ H6) as (x4, ?, ?).
       exists (application f4 x4); auto with coc.
-Defined.
+Qed.
 
 Lemma strip_lemma {T} (R: T -> T -> Prop):
   confluent R -> commut _ (clos_trans _ R) (transp _ R).
@@ -563,7 +563,7 @@ Proof.
     elim H4 with x1; auto with sets; intros.
     eexists; eauto with sets.
     eapply t_trans; eauto.
-Defined.
+Qed.
 
 Lemma transitive_closure_of_confluent_is_confluent {T} (R: T -> T -> Prop):
   confluent R -> confluent (clos_trans _ R).
@@ -577,14 +577,14 @@ Proof.
     elim H3 with x1; auto; intros.
     exists x2; auto.
     eapply t_trans; eauto.
-Defined.
+Qed.
 
 Lemma transitive_parallel_is_confluent:
   confluent (clos_trans _ parallel).
 Proof.
   apply transitive_closure_of_confluent_is_confluent.
   exact parallel_is_confluent.
-Defined.
+Qed.
 
 Lemma transtive_parallel_star:
   forall a b, [a =>* b] -> clos_trans _ parallel a b.
@@ -593,13 +593,13 @@ Proof.
   - auto with coc sets.
   - auto with coc sets.
   - intros; eapply t_trans; eauto.
-Defined.
+Qed.
 
 Lemma star_transitive_parallel:
   forall a b, clos_trans _ parallel a b -> [a =>* b].
 Proof.
   induction 1; eauto with coc.
-Defined.
+Qed.
 
 Lemma star_is_confluent:
   confluent star.
@@ -613,4 +613,34 @@ Proof.
     apply star_transitive_parallel; auto.
   - eapply transtive_parallel_star; auto.
   - eapply transtive_parallel_star; auto.
-Defined.
+Qed.
+
+Definition church_rosser {T} (R: T -> T -> Prop): Prop :=
+  forall a b,
+  clos_refl_sym_trans T R a b ->
+  exists2 c: T, clos_refl_trans T R a c & clos_refl_trans T R b c.
+
+Lemma confluent_is_church_rosser {T} (R: T -> T -> Prop):
+  confluent (clos_refl_trans _ R) -> church_rosser R.
+Proof.
+  simple induction 2; intros.
+  (* Case: step. *)
+  - eauto with sets.
+  (* Case: refl. *)
+  - eauto with sets.
+  (* Case: symm. *)
+  - destruct H2 as (z, ?, ?).
+    exists z; auto.
+  (* Case: tran. *)
+  - destruct H2 as (c, ?, ?).
+    destruct H4 as (d, ?, ?).
+    destruct H with c y d as (e, ?, ?); auto.
+    exists e; eapply rt_trans; eauto.
+Qed.
+
+Theorem step_is_church_rosser:
+  church_rosser step.
+Proof.
+  apply confluent_is_church_rosser.
+  exact star_is_confluent.
+Qed.
