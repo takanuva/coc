@@ -396,33 +396,22 @@ Defined.
 
 Hint Resolve parallel_step: coc.
 
-(******************************************************************************)
-
-Lemma lift_bound_ge:
-  forall i k n,
-  k <= n ->
-  lift i k n = i + n.
+Lemma star_parallel:
+  forall a b, parallel a b -> star a b.
 Proof.
-  intros; simpl.
-  destruct (le_gt_dec k n).
-  - auto with arith.
-  - absurd (k <= n); auto with arith.
+  simple induction 1; eauto with coc.
+  - intros.
+    eapply star_tran.
+    eapply star_tran.
+    apply star_application_left.
+    apply star_lambda_right.
+    exact H1.
+    apply star_application_right.
+    exact H3.
+    apply star_beta.
 Defined.
 
-Hint Resolve lift_bound_ge: coc.
-
-Lemma lift_bound_lt:
-  forall i k n,
-  k > n ->
-  lift i k n = n.
-Proof.
-  intros; simpl.
-  destruct (le_gt_dec k n).
-  - absurd (k <= n); auto with arith.
-  - trivial.
-Defined.
-
-Hint Resolve lift_bound_lt: coc.
+Hint Resolve star_parallel: coc.
 
 Lemma lift_distributes_over_subst:
   forall a b i k,
@@ -480,7 +469,8 @@ Proof.
     auto with coc.
   - auto with coc.
   - auto with coc.
-  - intros; unfold subst.
+  - intros.
+    unfold subst.
     destruct (lt_eq_lt_dec k n) as [ [ _ | _ ] | _ ]; auto with coc.
   - intros.
     do 2 rewrite subst_distributes_over_pi.
@@ -562,4 +552,65 @@ Proof.
       destruct (IHparallel1 _ H4) as (f4, ?, ?).
       destruct (IHparallel2 _ H6) as (x4, ?, ?).
       exists (application f4 x4); auto with coc.
+Defined.
+
+Lemma strip_lemma {T} (R: T -> T -> Prop):
+  confluent R -> commut _ (clos_trans _ R) (transp _ R).
+Proof.
+  simple induction 2; intros.
+  - elim H with z x0 y0; eauto with sets.
+  - elim H2 with z0; auto with sets; intros.
+    elim H4 with x1; auto with sets; intros.
+    eexists; eauto with sets.
+    eapply t_trans; eauto.
+Defined.
+
+Lemma transitive_closure_of_confluent_is_confluent {T} (R: T -> T -> Prop):
+  confluent R -> confluent (clos_trans _ R).
+Proof.
+  intro confluency.
+  unfold confluent, commut, transp.
+  simple induction 1; intros.
+  destruct (strip_lemma R) with z x0 y0; auto.
+  - eauto with sets.
+  - elim H1 with z0; auto; intros.
+    elim H3 with x1; auto; intros.
+    exists x2; auto.
+    eapply t_trans; eauto.
+Defined.
+
+Lemma transitive_parallel_is_confluent:
+  confluent (clos_trans _ parallel).
+Proof.
+  apply transitive_closure_of_confluent_is_confluent.
+  exact parallel_is_confluent.
+Defined.
+
+Lemma transtive_parallel_star:
+  forall a b, [a =>* b] -> clos_trans _ parallel a b.
+Proof.
+  simple induction 1.
+  - auto with coc sets.
+  - auto with coc sets.
+  - intros; eapply t_trans; eauto.
+Defined.
+
+Lemma star_transitive_parallel:
+  forall a b, clos_trans _ parallel a b -> [a =>* b].
+Proof.
+  induction 1; eauto with coc.
+Defined.
+
+Lemma star_is_confluent:
+  confluent star.
+Proof.
+  unfold confluent, commut, transp.
+  intros.
+  elim transitive_parallel_is_confluent with x y z.
+  - compute; intros.
+    exists x0.
+    apply star_transitive_parallel; auto.
+    apply star_transitive_parallel; auto.
+  - eapply transtive_parallel_star; auto.
+  - eapply transtive_parallel_star; auto.
 Defined.
