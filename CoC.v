@@ -14,7 +14,6 @@ Inductive pseudoterm: Set :=
 Hint Constructors pseudoterm: coc.
 
 Bind Scope coc_scope with pseudoterm.
-Notation "*" := (prop): coc_scope.
 Notation "\ t , b" := (lambda t b) (at level 190, format "\ t ,  b"): coc_scope.
 Notation "\/ t , b" := (pi t b) (at level 190, format "\/ t ,  b"): coc_scope.
 Notation "f @ x" := (application f x) (at level 150): coc_scope.
@@ -197,7 +196,8 @@ Qed.
 Hint Resolve star_beta: coc.
 
 Lemma star_step:
-  forall a b, [a => b] -> [a =>* b].
+  forall a b,
+  [a => b] -> [a =>* b].
 Proof.
   auto with coc.
 Qed.
@@ -205,7 +205,8 @@ Qed.
 Hint Resolve star_step: coc.
 
 Lemma star_symm:
-  forall a, [a =>* a].
+  forall a,
+  [a =>* a].
 Proof.
   auto with coc.
 Qed.
@@ -213,7 +214,8 @@ Qed.
 Hint Resolve star_symm: coc.
 
 Lemma star_tran:
-  forall a b c, [a =>* b] -> [b =>* c] -> [a =>* c].
+  forall a b c,
+  [a =>* b] -> [b =>* c] -> [a =>* c].
 Proof.
   eauto with coc.
 Qed.
@@ -291,7 +293,8 @@ Qed.
 Hint Resolve conv_beta: coc.
 
 Lemma conv_step:
-  forall a b, [a => b] -> [a <=> b].
+  forall a b,
+  [a => b] -> [a <=> b].
 Proof.
   auto with coc.
 Qed.
@@ -299,7 +302,8 @@ Qed.
 Hint Resolve conv_step: coc.
 
 Lemma conv_star:
-  forall a b, [a =>* b] -> [a <=> b].
+  forall a b,
+  [a =>* b] -> [a <=> b].
 Proof.
   induction 1; eauto with coc.
 Qed.
@@ -307,7 +311,8 @@ Qed.
 Hint Resolve conv_star: coc.
 
 Lemma conv_refl:
-  forall a, [a <=> a].
+  forall a,
+  [a <=> a].
 Proof.
   auto with coc.
 Qed.
@@ -315,7 +320,8 @@ Qed.
 Hint Resolve conv_refl: coc.
 
 Lemma conv_tran:
-  forall a b c, [a <=> b] -> [b <=> c] -> [a <=> c].
+  forall a b c,
+  [a <=> b] -> [b <=> c] -> [a <=> c].
 Proof.
   eauto with coc.
 Qed.
@@ -323,7 +329,8 @@ Qed.
 Hint Resolve conv_tran: coc.
 
 Lemma conv_symm:
-  forall a b, [a <=> b] -> [b <=> a].
+  forall a b,
+  [a <=> b] -> [b <=> a].
 Proof.
   auto with coc.
 Qed.
@@ -381,7 +388,8 @@ Inductive parallel: pseudoterm -> pseudoterm -> Prop :=
 Hint Constructors parallel: coc.
 
 Lemma parallel_refl:
-  forall e, parallel e e.
+  forall e,
+  parallel e e.
 Proof.
   simple induction e; auto with coc.
 Qed.
@@ -389,7 +397,8 @@ Qed.
 Hint Resolve parallel_refl: coc.
 
 Lemma parallel_step:
-  forall a b, [a => b] -> parallel a b.
+  forall a b,
+  [a => b] -> parallel a b.
 Proof.
   induction 1; auto with coc.
 Qed.
@@ -397,7 +406,8 @@ Qed.
 Hint Resolve parallel_step: coc.
 
 Lemma star_parallel:
-  forall a b, parallel a b -> star a b.
+  forall a b,
+  parallel a b -> [a =>* b].
 Proof.
   simple induction 1; eauto with coc.
   - intros.
@@ -587,7 +597,8 @@ Proof.
 Qed.
 
 Lemma transitive_parallel_star:
-  forall a b, [a =>* b] -> clos_trans _ parallel a b.
+  forall a b,
+  [a =>* b] -> clos_trans _ parallel a b.
 Proof.
   simple induction 1.
   - auto with coc sets.
@@ -596,7 +607,8 @@ Proof.
 Qed.
 
 Lemma star_transitive_parallel:
-  forall a b, clos_trans _ parallel a b -> [a =>* b].
+  forall a b,
+  clos_trans _ parallel a b -> [a =>* b].
 Proof.
   induction 1; eauto with coc.
 Qed.
@@ -675,5 +687,6 @@ Proof.
   - assumption.
   - apply inversion_star_normal with a x;
       apply inversion_star_normal with b x;
-      auto; congruence.
+      auto.
+    congruence.
 Qed.
