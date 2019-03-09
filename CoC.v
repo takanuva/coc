@@ -423,9 +423,64 @@ Qed.
 
 Hint Resolve star_parallel: coc.
 
+(******************************************************************************)
+
+Lemma lift_bound_ge:
+  forall i k n,
+  k <= n -> lift i k n = i + n.
+Proof.
+  intros; simpl.
+  destruct (le_gt_dec k n).
+  - reflexivity.
+  - absurd (k <= n); eauto with arith.
+Qed.
+
+Lemma lift_bound_lt:
+  forall i k n,
+  k > n -> lift i k n = n.
+Proof.
+  intros; simpl.
+  destruct (le_gt_dec k n).
+  - absurd (k <= n); eauto with arith.
+  - reflexivity.
+Qed.
+
+Lemma subst_bound_gt:
+  forall e k n,
+  n > k -> subst e k n = pred n.
+Proof.
+  intros; simpl.
+  destruct (lt_eq_lt_dec k n) as [ [ ? | ? ] | ? ].
+  - reflexivity.
+  - elim gt_irrefl with k; congruence.
+  - absurd (k <= n); auto with arith.
+Qed.
+
+Lemma subst_bound_eq:
+  forall e k n,
+  n = k -> subst e k n = lift n 0 e.
+Proof.
+  destruct 1; simpl.
+  destruct (lt_eq_lt_dec n n) as [ [ ? | ? ] | ? ].
+  - destruct (gt_irrefl n); auto.
+  - reflexivity.
+  - destruct (lt_irrefl n); auto.
+Qed.
+
+Lemma subst_bound_lt:
+  forall e k n,
+  n < k -> subst e k n = n.
+Proof.
+  intros; simpl.
+  destruct (lt_eq_lt_dec k n) as [ [ ? | ? ] | ? ].
+  - absurd (k <= n); auto with arith.
+  - elim lt_irrefl with k; congruence.
+  - reflexivity.
+Qed.
+
 Lemma lift_addition_distributes_over_subst:
-  forall a b n p k,
-  lift n (p + k) (subst b p a) = subst (lift n k b) p (lift n (S (p + k)) a).
+  forall a b i p k,
+  lift i (p + k) (subst b p a) = subst (lift i k b) p (lift i (S (p + k)) a).
 Proof.
   induction a; intros.
   (* Case: type. *)
@@ -433,7 +488,21 @@ Proof.
   (* Case: prop. *)
   - reflexivity.
   (* Case: bound. *)
-  - admit.
+  - unfold subst at 1.
+    destruct (lt_eq_lt_dec p n) as [ [ ? | ? ] | ? ].
+    + destruct n.
+      inversion l.
+      unfold lift at 1, pred.
+      destruct (le_gt_dec (p + k) n).
+      * rewrite lift_bound_ge; auto with arith.
+        rewrite subst_bound_gt; eauto with arith.
+        replace (i + S n) with (S (i + n)); auto.
+      * rewrite lift_bound_lt; auto with arith.
+        rewrite subst_bound_gt; auto with arith.
+    + admit.
+    + rewrite lift_bound_lt; auto with arith.
+      rewrite lift_bound_lt; auto with arith.
+      rewrite subst_bound_lt; auto.
   (* Case: pi. *)
   - simpl; f_equal.
     + apply IHa1.
@@ -465,8 +534,7 @@ Qed.
 
 Lemma subst_addition_distributes_over_itself :
   forall a b c p k,
-  subst c (p + k) (subst b p a) =
-      subst (subst c k b) p (subst c (S (p + k)) a).
+  subst c (p + k) (subst b p a) = subst (subst c k b) p (subst c (S (p + k)) a).
 Proof.
   induction a; intros.
   (* Case: type. *)
@@ -557,7 +625,7 @@ Proof.
   - auto with coc.
   - intros.
     unfold subst.
-    destruct (lt_eq_lt_dec k n) as [ [ _ | _ ] | _ ]; auto with coc.
+    destruct (lt_eq_lt_dec k n) as [ [ ? | ? ] | ? ]; auto with coc.
   - intros.
     do 2 rewrite subst_distributes_over_pi.
     auto with coc.
