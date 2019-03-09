@@ -463,12 +463,46 @@ Proof.
   apply lift_addition_distributes_over_subst.
 Qed.
 
-Lemma subst_distributes_over_itself:
-  forall P N M k,
-  subst P k (subst N 0 M) = subst (subst P k N) 0 (subst P (S k) M).
+Lemma subst_addition_distributes_over_itself :
+  forall a b c p k,
+  subst c (p + k) (subst b p a) =
+      subst (subst c k b) p (subst c (S (p + k)) a).
 Proof.
-(* XXX *)
+  induction a; intros.
+  (* Case: type. *)
+  - reflexivity.
+  (* Case: prop. *)
+  - reflexivity.
+  (* Case: bound. *)
+  - admit.
+  (* Case: pi. *)
+  - simpl; f_equal.
+    + apply IHa1.
+    + replace (S (p + k)) with (S p + k).
+      apply IHa2.
+      auto.
+  (* Case: lambda. *)
+  - simpl; f_equal.
+    + apply IHa1.
+    + replace (S (p + k)) with (S p + k).
+      apply IHa2.
+      auto.
+  (* Case: application. *)
+  - simpl; f_equal.
+    + apply IHa1.
+    + replace (S (p + k)) with (S p + k).
+      apply IHa2.
+      auto.
 Admitted.
+
+Lemma subst_distributes_over_itself:
+  forall a b c k,
+  subst c k (subst b 0 a) = subst (subst c k b) 0 (subst c (S k) a).
+Proof.
+  intros.
+  replace k with (0 + k); auto.
+  apply subst_addition_distributes_over_itself.
+Qed.
 
 Lemma parallel_lift:
   forall a b,
@@ -477,20 +511,27 @@ Lemma parallel_lift:
   parallel (lift i k a) (lift i k b).
 Proof.
   simple induction 1.
+  (* Case: parallel_beta. *)
   - intros.
     rewrite lift_distributes_over_application.
     rewrite lift_distributes_over_lambda.
     rewrite lift_distributes_over_subst.
     auto with coc.
+  (* Case: parallel_type. *)
   - auto with coc.
+  (* Case: parallel_prop. *)
   - auto with coc.
+  (* Case: parallel_bound. *)
   - auto with coc.
+  (* Case: parallel_pi. *)
   - intros.
     do 2 rewrite lift_distributes_over_pi.
     auto with coc.
+  (* Case: parallel_lambda. *)
   - intros.
     do 2 rewrite lift_distributes_over_lambda.
     auto with coc.
+  (* Case: parallel_application. *)
   - intros.
     do 2 rewrite lift_distributes_over_application.
     auto with coc.
