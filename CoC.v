@@ -423,15 +423,50 @@ Qed.
 
 Hint Resolve star_parallel: coc.
 
+Lemma lift_addition_distributes_over_subst:
+  forall a b n p k,
+  lift n (p + k) (subst b p a) = subst (lift n k b) p (lift n (S (p + k)) a).
+Proof.
+  induction a; intros.
+  (* Case: type. *)
+  - reflexivity.
+  (* Case: prop. *)
+  - reflexivity.
+  (* Case: bound. *)
+  - admit.
+  (* Case: pi. *)
+  - simpl; f_equal.
+    + apply IHa1.
+    + replace (S (p + k)) with (S p + k).
+      apply IHa2.
+      auto.
+  (* Case: lambda. *)
+  - simpl; f_equal.
+    + apply IHa1.
+    + replace (S (p + k)) with (S p + k).
+      apply IHa2.
+      auto.
+  (* Case: application. *)
+  - simpl; f_equal.
+    + apply IHa1.
+    + replace (S (p + k)) with (S p + k).
+      apply IHa2.
+      auto.
+Admitted.
+
 Lemma lift_distributes_over_subst:
   forall a b i k,
   lift i k (subst b 0 a) = subst (lift i k b) 0 (lift i (S k) a).
-(* XXX *)
-Admitted.
+Proof.
+  intros.
+  replace k with (0 + k); auto.
+  apply lift_addition_distributes_over_subst.
+Qed.
 
 Lemma subst_distributes_over_itself:
   forall P N M k,
   subst P k (subst N 0 M) = subst (subst P k N) 0 (subst P (S k) M).
+Proof.
 (* XXX *)
 Admitted.
 
@@ -690,3 +725,17 @@ Proof.
       auto.
     congruence.
 Qed.
+
+(******************************************************************************)
+
+Definition context: Set :=
+  list pseudoterm.
+
+Inductive item (e: pseudoterm): context -> nat -> Prop :=
+  | item_car:
+    forall cdr, item e (cons e cdr) 0
+  | item_cdr:
+    forall car cdr n, item e cdr n -> item e (cons car cdr) (S n).
+
+Definition item_lift g e n: Prop :=
+  exists2 x, e = lift (S n) 0 x & item x g n.
