@@ -1,7 +1,7 @@
 Require Import Arith.
 Require Import Compare_dec.
 Require Import Relations.
-Require Import Extraction.
+Require Import Equality.
 
 Inductive pseudoterm: Set :=
   | type
@@ -425,6 +425,25 @@ Hint Resolve star_parallel: coc.
 
 (******************************************************************************)
 
+Lemma inversion_star_pi:
+  forall t1 b1 e,
+  [\/t1, b1 =>* e] ->
+  forall P: Prop,
+  (forall t2 b2, e = pi t2 b2 -> [t1 =>* t2] -> [b1 =>* b2] -> P) -> P.
+Proof.
+  intros until 1.
+  dependent induction H; intros.
+  - inversion H; subst.
+    + eapply H0; eauto with coc.
+    + eapply H0; eauto with coc.
+  - eauto with coc.
+  - eapply IHclos_refl_trans1; eauto; intros; subst.
+    eapply IHclos_refl_trans2; eauto; intros; subst.
+    eapply H1; eauto with coc.
+Defined.
+
+(******************************************************************************)
+
 Lemma lift_bound_ge:
   forall i k n,
   k <= n -> lift i k n = i + n.
@@ -499,7 +518,12 @@ Proof.
         replace (i + S n) with (S (i + n)); auto.
       * rewrite lift_bound_lt; auto with arith.
         rewrite subst_bound_gt; auto with arith.
-    + admit.
+    + destruct (eq_sym e); clear e.
+      destruct (le_gt_dec (S (n + k)) n).
+      * rewrite lift_bound_ge; auto with arith.
+        admit.
+      * rewrite lift_bound_lt; auto with arith.
+        admit.
     + rewrite lift_bound_lt; auto with arith.
       rewrite lift_bound_lt; auto with arith.
       rewrite subst_bound_lt; auto.
@@ -840,11 +864,132 @@ Qed.
 Definition context: Set :=
   list pseudoterm.
 
+Bind Scope list_scope with context.
+
 Inductive item (e: pseudoterm): context -> nat -> Prop :=
   | item_car:
     forall cdr, item e (cons e cdr) 0
   | item_cdr:
     forall car cdr n, item e cdr n -> item e (cons car cdr) (S n).
 
-Definition item_lift g e n: Prop :=
+Definition item_lift (e: pseudoterm) (g: context) (n: nat): Prop :=
   exists2 x, e = lift (S n) 0 x & item x g n.
+
+Inductive typing: context -> pseudoterm -> pseudoterm -> Prop :=
+  | typing_prop:
+    forall g, valid_context g -> typing g prop type
+  | typing_bound:
+    forall g, valid_context g ->
+    forall n t, item_lift t g n -> typing g n t
+
+  | typing_pi1:
+    forall g t b,
+    typing g t type -> typing (t :: g) b type -> typing g (\/t, b) type
+  | typing_pi2:
+    forall g t b,
+    typing g t prop -> typing (t :: g) b type -> typing g (\/t, b) type
+  | typing_pi3:
+    forall g t b,
+    typing g t type -> typing (t :: g) b prop -> typing g (\/t, b) prop
+  | typing_pi4:
+    forall g t b,
+    typing g t prop -> typing (t :: g) b prop -> typing g (\/t, b) prop
+
+  | typing_conv:
+    forall g e t1 t2,
+    typing g e t1 -> [t1 <=> t2] -> typing g e t2
+
+with valid_context: context -> Prop :=
+  | valid_context_nil:
+    valid_context nil
+  | valid_context_term_var:
+    forall g t, typing g t prop -> valid_context (cons t g)
+  | valid_context_type_var:
+    forall g t, typing g t type -> valid_context (cons t g).
+
+Lemma typing_valid_context:
+  forall g e t,
+  typing g e t -> valid_context g.
+Proof.
+  induction 1; assumption.
+Qed.
+
+Lemma foobar:
+  forall g e t,
+  typing g e t ->
+    match e with
+    | type =>
+      False
+    | prop =>
+      conv t type
+    | bound n =>
+      exists2 x, item_lift x g n & conv t x
+    | pi t2 b =>
+      exists2 s1, typing g t2 s1 &
+        exists2 s2, typing (t2 :: g) b s2 & conv t s2
+    | _ =>
+      (* XXX *)
+      False
+    end.
+Proof.
+  induction 1; simpl; intros.
+  - auto with coc.
+  - eauto with coc.
+  - eauto with coc.
+  - eauto with coc.
+  - eauto with coc.
+  - eauto with coc.
+  - induction e.
+    + trivial.
+    + eauto with coc.
+    + destruct IHtyping.
+      eauto with coc.
+    + destruct IHtyping.
+      eexists; eauto with coc.
+      destruct H2.
+      eexists; eauto with coc.
+    (* XXX *)
+    + trivial.
+    + trivial.
+Qed.
+
+Lemma inversion_typing_type:
+  forall g t,
+  ~typing g type t.
+Proof.
+  intros until 1.
+  dependent induction H; auto.
+Qed.
+
+Lemma inversion_typing_prop:
+  forall g t,
+  typing g prop t -> [t <=> type].
+Proof.
+  intros until 1.
+  dependent induction H; eauto with coc.
+Qed.
+
+Lemma inversion_typing_bound:
+  forall g t n,
+  typing g (bound n) t ->
+  exists2 x, item_lift x g n & [t <=> x].
+Proof.
+  intros.
+  destruct foobar with g n t; intros; auto.
+  exists x; auto.
+Qed.
+
+Lemma inversion_typing_pi:
+  forall e T U s,
+  typing e (\/T, U) s ->
+  exists2 s1, typing e T s1 &
+  exists2 s2, typing (T :: e) U s2 & [s2 <=> s].
+Proof.
+  intros.
+  destruct foobar with e (pi T U) s.
+  assumption.
+  destruct H1.
+  exists x.
+  assumption.
+  exists x0; eauto with coc.
+Qed.
