@@ -14,9 +14,12 @@ Inductive pseudoterm: Set :=
 Hint Constructors pseudoterm: coc.
 
 Bind Scope coc_scope with pseudoterm.
-Notation "\ t , b" := (lambda t b) (at level 190, format "\ t ,  b"): coc_scope.
-Notation "\/ t , b" := (pi t b) (at level 190, format "\/ t ,  b"): coc_scope.
-Notation "f @ x" := (application f x) (at level 150): coc_scope.
+Notation "\ t , b" := (lambda t b)
+  (at level 70, format "\ t ,  b"): coc_scope.
+Notation "\/ t , b" := (pi t b)
+  (at level 70, format "\/ t ,  b"): coc_scope.
+Notation "f @ x" := (application f x)
+  (at level 65, left associativity, only parsing): coc_scope.
 Coercion bound: nat >-> pseudoterm.
 
 Inductive subterm: pseudoterm -> pseudoterm -> Prop :=
@@ -124,7 +127,8 @@ Fixpoint subst (p: pseudoterm) (k: nat) (q: pseudoterm): pseudoterm :=
     application (subst p k f) (subst p k x)
   end.
 
-Notation "q [ p /]" := (subst p 0 q) (at level 1, format "q [ p /]"): coc_scope.
+Notation "q [ p /]" := (subst p 0 q)
+  (at level 1, format "q [ p /]"): coc_scope.
 
 Lemma subst_distributes_over_pi:
   forall t b i k,
@@ -177,14 +181,16 @@ Inductive step: pseudoterm -> pseudoterm -> Prop :=
     step x1 x2 -> step (f @ x1) (f @ x2).
 
 Hint Constructors step: coc.
-Notation "[ a => b ]" := (step a b): type_scope.
+Notation "[ a => b ]" := (step a b)
+  (at level 0, a at level 99, b at level 99): type_scope.
 
 Definition star: pseudoterm -> pseudoterm -> Prop :=
   clos_refl_trans _ step.
 
 Hint Unfold star: coc.
 Hint Constructors clos_refl_trans: coc.
-Notation "[ a =>* b ]" := (star a b): type_scope.
+Notation "[ a =>* b ]" := (star a b)
+  (at level 0, a at level 99, b at level 99): type_scope.
 
 Lemma star_beta:
   forall t b x,
@@ -281,7 +287,8 @@ Definition conv: pseudoterm -> pseudoterm -> Prop :=
 
 Hint Unfold conv: coc.
 Hint Constructors clos_refl_sym_trans: coc.
-Notation "[ a <=> b ]" := (conv a b): type_scope.
+Notation "[ a <=> b ]" := (conv a b)
+  (at level 0, a at level 99, b at level 99): type_scope.
 
 Lemma conv_beta:
   forall t b x,
@@ -875,37 +882,43 @@ Inductive item (e: pseudoterm): context -> nat -> Prop :=
 Definition item_lift (e: pseudoterm) (g: context) (n: nat): Prop :=
   exists2 x, e = lift (S n) 0 x & item x g n.
 
+Reserved Notation "[ g |- e : t ]"
+  (at level 0, g at level 99, e at level 99, t at level 99,
+   format "[ g  |-  e :  t ]").
+
 Inductive typing: context -> pseudoterm -> pseudoterm -> Prop :=
   | typing_prop:
-    forall g, valid_context g -> typing g prop type
+    forall g, valid_context g -> [g |- prop: type]
   | typing_bound:
     forall g, valid_context g ->
-    forall n t, item_lift t g n -> typing g n t
+    forall n t, item_lift t g n -> [g |- n: t]
 
   | typing_pi1:
     forall g t b,
-    typing g t type -> typing (t :: g) b type -> typing g (\/t, b) type
+    [g |- t: type] -> [t :: g |- b: type] -> [g |- \/t, b: type]
   | typing_pi2:
     forall g t b,
-    typing g t prop -> typing (t :: g) b type -> typing g (\/t, b) type
+    [g |- t: prop] -> [t :: g |- b: type] -> [g |- \/t, b: type]
   | typing_pi3:
     forall g t b,
-    typing g t type -> typing (t :: g) b prop -> typing g (\/t, b) prop
+    [g |- t: type] -> [t :: g |- b: prop] -> [g |- \/t, b: prop]
   | typing_pi4:
     forall g t b,
-    typing g t prop -> typing (t :: g) b prop -> typing g (\/t, b) prop
+    [g |- t: prop] -> [t :: g |- b: prop] -> [g |- \/t, b: prop]
 
   | typing_conv:
     forall g e t1 t2,
-    typing g e t1 -> [t1 <=> t2] -> typing g e t2
+    [g |- e: t1] -> [t1 <=> t2] -> [g |- e: t2]
 
 with valid_context: context -> Prop :=
   | valid_context_nil:
     valid_context nil
-  | valid_context_term_var:
-    forall g t, typing g t prop -> valid_context (cons t g)
   | valid_context_type_var:
-    forall g t, typing g t type -> valid_context (cons t g).
+    forall g t, [g |- t: type] -> valid_context (cons t g)
+  | valid_context_term_var:
+    forall g t, [g |- t: prop] -> valid_context (cons t g)
+
+where "[ g |- e : t ]" := (typing g e t): type_scope.
 
 Lemma typing_valid_context:
   forall g e t,
