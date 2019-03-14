@@ -906,6 +906,23 @@ Inductive typing: context -> pseudoterm -> pseudoterm -> Prop :=
     forall g t b,
     [g |- t: prop] -> [t :: g |- b: prop] -> [g |- \/t, b: prop]
 
+  | type_lambda1:
+    forall g e t u,
+    [g |- t: type] -> [t :: g |- u: type] -> [t :: g |- e: u] ->
+    [g |- \t, e: \/t, u]
+  | type_lambda2:
+    forall g e t u,
+    [g |- t: prop] -> [t :: g |- u: type] -> [t :: g |- e: u] ->
+    [g |- \t, e: \/t, u]
+  | type_lambda3:
+    forall g e t u,
+    [g |- t: type] -> [t :: g |- u: prop] -> [t :: g |- e: u] ->
+    [g |- \t, e: \/t, u]
+  | type_lambda4:
+    forall g e t u,
+    [g |- t: prop] -> [t :: g |- u: prop] -> [t :: g |- e: u] ->
+    [g |- \t, e: \/t, u]
+
   | typing_conv:
     forall g e t1 t2,
     [g |- e: t1] -> [t1 <=> t2] -> [g |- e: t2]
@@ -940,13 +957,21 @@ Lemma foobar:
     | pi t2 b =>
       exists2 s1, typing g t2 s1 &
         exists2 s2, typing (t2 :: g) b s2 & conv t s2
-    | _ =>
+    | lambda t2 b =>
+      exists2 s1, typing g t2 s1 &
+        exists2 u, typing (t2 :: g) b u &
+          exists2 s2, typing (t2 :: g) u s2 & conv t (\/t2, u)
+    | application f x =>
       (* XXX *)
       False
     end.
 Proof.
   induction 1; simpl; intros.
   - auto with coc.
+  - eauto with coc.
+  - eauto with coc.
+  - eauto with coc.
+  - eauto with coc.
   - eauto with coc.
   - eauto with coc.
   - eauto with coc.
@@ -961,8 +986,13 @@ Proof.
       eexists; eauto with coc.
       destruct H2.
       eexists; eauto with coc.
+    + destruct IHtyping.
+      eexists; eauto with coc.
+      destruct H2.
+      eexists; eauto with coc.
+      destruct H3;
+      eexists; eauto with coc.
     (* XXX *)
-    + trivial.
     + trivial.
 Qed.
 
