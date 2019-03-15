@@ -15,11 +15,11 @@ Hint Constructors pseudoterm: coc.
 
 Bind Scope coc_scope with pseudoterm.
 Notation "\ t , b" := (lambda t b)
-  (at level 70, format "\ t ,  b"): coc_scope.
+  (at level 70, t at level 70, b at level 70, format "\ t ,  b"): coc_scope.
 Notation "\/ t , b" := (pi t b)
-  (at level 70, format "\/ t ,  b"): coc_scope.
+  (at level 70, t at level 70, b at level 70, format "\/ t ,  b"): coc_scope.
 Notation "f @ x" := (application f x)
-  (at level 65, left associativity, only parsing): coc_scope.
+  (at level 65, x at level 65, left associativity): coc_scope.
 Coercion bound: nat >-> pseudoterm.
 
 Inductive subterm: pseudoterm -> pseudoterm -> Prop :=
@@ -906,19 +906,19 @@ Inductive typing: context -> pseudoterm -> pseudoterm -> Prop :=
     forall g t b,
     [g |- t: prop] -> [t :: g |- b: prop] -> [g |- \/t, b: prop]
 
-  | type_lambda1:
+  | typing_lambda1:
     forall g e t u,
     [g |- t: type] -> [t :: g |- u: type] -> [t :: g |- e: u] ->
     [g |- \t, e: \/t, u]
-  | type_lambda2:
+  | typing_lambda2:
     forall g e t u,
     [g |- t: prop] -> [t :: g |- u: type] -> [t :: g |- e: u] ->
     [g |- \t, e: \/t, u]
-  | type_lambda3:
+  | typing_lambda3:
     forall g e t u,
     [g |- t: type] -> [t :: g |- u: prop] -> [t :: g |- e: u] ->
     [g |- \t, e: \/t, u]
-  | type_lambda4:
+  | typing_lambda4:
     forall g e t u,
     [g |- t: prop] -> [t :: g |- u: prop] -> [t :: g |- e: u] ->
     [g |- \t, e: \/t, u]
