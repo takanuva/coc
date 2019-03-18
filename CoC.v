@@ -811,14 +811,10 @@ Lemma confluency_implies_church_rosser {T} (R: T -> T -> Prop):
   confluent (clos_refl_trans _ R) -> church_rosser R.
 Proof.
   simple induction 2; intros.
-  (* Case: step. *)
   - eauto with sets.
-  (* Case: refl. *)
   - eauto with sets.
-  (* Case: symm. *)
   - destruct H2 as (z, ?, ?).
     exists z; auto.
-  (* Case: tran. *)
   - destruct H2 as (c, ?, ?).
     destruct H4 as (d, ?, ?).
     destruct H with c y d as (e, ?, ?); auto.
@@ -905,7 +901,6 @@ Inductive typing: context -> pseudoterm -> pseudoterm -> Prop :=
   | typing_pi4:
     forall g t b,
     [g |- t: prop] -> [t :: g |- b: prop] -> [g |- \/t, b: prop]
-
   | typing_lambda1:
     forall g e t u,
     [g |- t: type] -> [t :: g |- u: type] -> [t :: g |- e: u] ->
@@ -922,7 +917,6 @@ Inductive typing: context -> pseudoterm -> pseudoterm -> Prop :=
     forall g e t u,
     [g |- t: prop] -> [t :: g |- u: prop] -> [t :: g |- e: u] ->
     [g |- \t, e: \/t, u]
-
   | typing_conv:
     forall g e t1 t2,
     [g |- e: t1] -> [t1 <=> t2] -> [g |- e: t2]
@@ -998,7 +992,7 @@ Qed.
 
 Lemma inversion_typing_type:
   forall g t,
-  ~typing g type t.
+  ~[g |- type: t].
 Proof.
   intros until 1.
   dependent induction H; auto.
@@ -1006,15 +1000,15 @@ Qed.
 
 Lemma inversion_typing_prop:
   forall g t,
-  typing g prop t -> [t <=> type].
+  [g |- prop: t] -> [t <=> type].
 Proof.
   intros until 1.
   dependent induction H; eauto with coc.
 Qed.
 
 Lemma inversion_typing_bound:
-  forall g t n,
-  typing g (bound n) t ->
+  forall g t (n: nat),
+  typing g n t ->
   exists2 x, item_lift x g n & [t <=> x].
 Proof.
   intros.
