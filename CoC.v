@@ -3,6 +3,11 @@ Require Import Compare_dec.
 Require Import Relations.
 Require Import Equality.
 
+(** * The Calculus of Constructions 
+
+    The syntax for our lambda calculus. The [type] and [prop] are our universes,
+    and we use de Bruijn indexes on the [bound] constructor. The remainign [pi],
+    [lambda] and [application] constructors are self-explanatory. *)
 Inductive pseudoterm: Set :=
   | type
   | prop
@@ -22,6 +27,9 @@ Notation "f @ x" := (application f x)
   (at level 65, x at level 65, left associativity): coc_scope.
 Coercion bound: nat >-> pseudoterm.
 
+(** A subterm relation [subterm a b] defines that [a] is a direct subterm of
+   [b]. This is useful for checking that our one-step reduction may be applied
+   at any depth. *)
 Inductive subterm: pseudoterm -> pseudoterm -> Prop :=
   | subterm_pi_left:
     forall t b, subterm t (pi t b)
@@ -901,6 +909,7 @@ Inductive typing: context -> pseudoterm -> pseudoterm -> Prop :=
   | typing_pi4:
     forall g t b,
     [g |- t: prop] -> [t :: g |- b: prop] -> [g |- \/t, b: prop]
+
   | typing_lambda1:
     forall g e t u,
     [g |- t: type] -> [t :: g |- u: type] -> [t :: g |- e: u] ->
@@ -917,6 +926,11 @@ Inductive typing: context -> pseudoterm -> pseudoterm -> Prop :=
     forall g e t u,
     [g |- t: prop] -> [t :: g |- u: prop] -> [t :: g |- e: u] ->
     [g |- \t, e: \/t, u]
+
+  | typing_application:
+    forall g f x t b,
+    [g |- f: \/t, b] -> [g |- x: t] -> [g |- f @ x: b[x/]]
+
   | typing_conv:
     forall g e t1 t2,
     [g |- e: t1] -> [t1 <=> t2] -> [g |- e: t2]
@@ -956,12 +970,13 @@ Lemma foobar:
         exists2 u, typing (t2 :: g) b u &
           exists2 s2, typing (t2 :: g) u s2 & conv t (\/t2, u)
     | application f x =>
-      (* XXX *)
-      False
+      exists2 t2, typing g x t2 &
+        exists2 b, typing g f (\/t2, b) & conv t (b[x/])
     end.
 Proof.
   induction 1; simpl; intros.
   - auto with coc.
+  - eauto with coc.
   - eauto with coc.
   - eauto with coc.
   - eauto with coc.
@@ -986,8 +1001,10 @@ Proof.
       eexists; eauto with coc.
       destruct H3;
       eexists; eauto with coc.
-    (* XXX *)
-    + trivial.
+    + destruct IHtyping.
+      eexists; eauto with coc.
+      destruct H2.
+      eexists; eauto with coc.
 Qed.
 
 Lemma inversion_typing_type:
@@ -1008,25 +1025,44 @@ Qed.
 
 Lemma inversion_typing_bound:
   forall g t (n: nat),
-  typing g n t ->
+  [g |- n: t] ->
   exists2 x, item_lift x g n & [t <=> x].
 Proof.
-  intros.
-  destruct foobar with g n t; intros; auto.
-  exists x; auto.
+  intros until 1.
+  dependent induction H.
+  - exists t; eauto with coc.
+  - destruct IHtyping with n; auto.
+    exists x; eauto with coc.
 Qed.
 
 Lemma inversion_typing_pi:
-  forall e T U s,
-  typing e (\/T, U) s ->
-  exists2 s1, typing e T s1 &
-  exists2 s2, typing (T :: e) U s2 & [s2 <=> s].
+  forall g t b s,
+  [g |- \/t, b: s] ->
+  exists2 s2, [g |- t: s2] & [t :: g |- b: s].
 Proof.
-  intros.
-  destruct foobar with e (pi T U) s.
-  assumption.
-  destruct H1.
-  exists x.
-  assumption.
-  exists x0; eauto with coc.
+  intros until 1.
+  dependent induction H.
+  - eauto with coc.
+  - eauto with coc.
+  - eauto with coc.
+  - eauto with coc.
+  - destruct IHtyping with t b; auto.
+    eexists; eauto.
+    eapply typing_conv; eauto.
+Qed.
+
+Lemma inversion_typing_application:
+  forall g f x t,
+  [g |- f @ x: t] ->
+  exists2 t2, [g |- x: t2] &
+    exists2 b, [g |- f: \/t2, b] & [t <=> b[x/]].
+Proof.
+  intros until 1.
+  dependent induction H.
+  - exists t; auto.
+    exists b; eauto with coc.
+  - destruct IHtyping with f x; auto.
+    eexists; eauto.
+    destruct H2.
+    eexists; eauto with coc.
 Qed.
