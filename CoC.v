@@ -73,29 +73,6 @@ Fixpoint lift (i: nat) (k: nat) (e: pseudoterm): pseudoterm :=
     application (lift i k f) (lift i k x)
   end.
 
-Lemma lift_zero_e_equals_e:
-  forall e k,
-  lift 0 k e = e.
-Proof.
-  induction e; auto with coc.
-  - intro; unfold lift.
-    destruct (le_gt_dec k n); reflexivity.
-  - unfold lift in * |- *; intro.
-    rewrite (IHe1 k).
-    rewrite (IHe2 (S k)).
-    reflexivity.
-  - unfold lift in * |- *; intro.
-    rewrite (IHe1 k).
-    rewrite (IHe2 (S k)).
-    reflexivity.
-  - unfold lift in * |- *; intro.
-    rewrite (IHe1 k).
-    rewrite (IHe2 k).
-    reflexivity.
-Qed.
-
-Hint Resolve lift_zero_e_equals_e: coc.
-
 Lemma lift_distributes_over_pi:
   forall t b i k,
   lift i k (pi t b) = pi (lift i k t) (lift i (S k) b).
@@ -122,6 +99,54 @@ Proof.
 Qed.
 
 Hint Resolve lift_distributes_over_application: coc.
+
+Lemma lift_zero_e_equals_e:
+  forall e k,
+  lift 0 k e = e.
+Proof.
+  induction e; auto with coc.
+  - intro; unfold lift.
+    destruct (le_gt_dec k n); reflexivity.
+  - unfold lift in * |- *; intro.
+    rewrite (IHe1 k).
+    rewrite (IHe2 (S k)).
+    reflexivity.
+  - unfold lift in * |- *; intro.
+    rewrite (IHe1 k).
+    rewrite (IHe2 (S k)).
+    reflexivity.
+  - unfold lift in * |- *; intro.
+    rewrite (IHe1 k).
+    rewrite (IHe2 k).
+    reflexivity.
+Qed.
+
+Hint Resolve lift_zero_e_equals_e: coc.
+
+Lemma lift_i_lift_j_equals_lift_i_plus_j:
+  forall e i j k,
+  lift i k (lift j k e) = lift (i + j) k e.
+Proof.
+  induction e; intros.
+  - auto.
+  - auto.
+  - unfold lift.
+    remember (le_gt_dec k n) as H.
+    destruct H.
+    + destruct (le_gt_dec k (j + n)).
+      auto with arith.
+      absurd (n > j + n).
+      * apply le_not_gt; apply le_plus_r.
+      * eapply le_gt_trans; eauto.
+    + symmetry in HeqH.
+      rewrite HeqH.
+      reflexivity.
+  - intros; simpl; f_equal; auto.
+  - intros; simpl; f_equal; auto.
+  - intros; simpl; f_equal; auto.
+Qed.
+
+Hint Resolve lift_i_lift_j_equals_lift_i_plus_j: coc.
 
 (** *)
 
@@ -1164,7 +1189,7 @@ Proof.
   - eapply typing_conv; eauto with coc.
 Admitted.
 
-Theorem weaking:
+Theorem weakening:
   forall g e t,
   [g |- e: t] ->
   forall x,
