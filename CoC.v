@@ -1,3 +1,6 @@
+(******************************************************************************)
+(*      Copyright (c) 2019 - Paulo Torrens <paulotorrens AT gnu DOT org>      *)
+(******************************************************************************)
 Require Import Arith.
 Require Import Compare_dec.
 Require Import Relations.
