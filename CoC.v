@@ -123,6 +123,30 @@ Qed.
 
 Hint Resolve lift_zero_e_equals_e: coc.
 
+Lemma lift_bound_ge:
+  forall i k n,
+  k <= n -> lift i k n = i + n.
+Proof.
+  intros; simpl.
+  destruct (le_gt_dec k n).
+  - reflexivity.
+  - absurd (k <= n); eauto with arith.
+Qed.
+
+Hint Resolve lift_bound_ge.
+
+Lemma lift_bound_lt:
+  forall i k n,
+  k > n -> lift i k n = n.
+Proof.
+  intros; simpl.
+  destruct (le_gt_dec k n).
+  - absurd (k <= n); eauto with arith.
+  - reflexivity.
+Qed.
+
+Hint Resolve lift_bound_lt.
+
 Lemma lift_i_lift_j_equals_lift_i_plus_j:
   forall e i j k,
   lift i k (lift j k e) = lift (i + j) k e.
@@ -130,17 +154,13 @@ Proof.
   induction e; intros.
   - auto.
   - auto.
-  - unfold lift.
-    remember (le_gt_dec k n) as H.
-    destruct H.
-    + destruct (le_gt_dec k (j + n)).
-      auto with arith.
-      absurd (n > j + n).
-      * apply le_not_gt; apply le_plus_r.
-      * eapply le_gt_trans; eauto.
-    + symmetry in HeqH.
-      rewrite HeqH.
-      reflexivity.
+  - simpl.
+    destruct (le_gt_dec k n).
+    + rewrite plus_assoc_reverse.
+      apply lift_bound_ge.
+      apply le_trans with n; auto.
+      apply le_plus_r.
+    + apply lift_bound_lt; auto.
   - intros; simpl; f_equal; auto.
   - intros; simpl; f_equal; auto.
   - intros; simpl; f_equal; auto.
@@ -503,26 +523,6 @@ Proof.
 Defined.
 
 (******************************************************************************)
-
-Lemma lift_bound_ge:
-  forall i k n,
-  k <= n -> lift i k n = i + n.
-Proof.
-  intros; simpl.
-  destruct (le_gt_dec k n).
-  - reflexivity.
-  - absurd (k <= n); eauto with arith.
-Qed.
-
-Lemma lift_bound_lt:
-  forall i k n,
-  k > n -> lift i k n = n.
-Proof.
-  intros; simpl.
-  destruct (le_gt_dec k n).
-  - absurd (k <= n); eauto with arith.
-  - reflexivity.
-Qed.
 
 Lemma subst_bound_gt:
   forall e k n,
