@@ -58,10 +58,10 @@ Fixpoint lift (i: nat) (k: nat) (e: pseudoterm): pseudoterm :=
   | prop =>
     prop
   | bound n =>
-    match le_gt_dec k n with
-    | left _ => bound (i + n)
-    | right _ => bound n
-    end
+    if le_gt_dec k n then
+      bound (i + n)
+    else
+      bound n
   | pi t b =>
     pi (lift i k t) (lift i (S k) b)
   | lambda t b =>
@@ -956,7 +956,6 @@ Inductive typing: context -> pseudoterm -> pseudoterm -> Prop :=
   | typing_bound:
     forall g, valid_context g ->
     forall n t, item_lift t g n -> [g |- n: t]
-
   | typing_pi1:
     forall g t b,
     [g |- t: type] -> [t :: g |- b: type] -> [g |- \/t, b: type]
@@ -969,7 +968,6 @@ Inductive typing: context -> pseudoterm -> pseudoterm -> Prop :=
   | typing_pi4:
     forall g t b,
     [g |- t: prop] -> [t :: g |- b: prop] -> [g |- \/t, b: prop]
-
   | typing_lambda1:
     forall g e t u,
     [g |- t: type] -> [t :: g |- u: type] -> [t :: g |- e: u] ->
@@ -986,11 +984,9 @@ Inductive typing: context -> pseudoterm -> pseudoterm -> Prop :=
     forall g e t u,
     [g |- t: prop] -> [t :: g |- u: prop] -> [t :: g |- e: u] ->
     [g |- \t, e: \/t, u]
-
   | typing_application:
     forall g f x t b,
     [g |- f: \/t, b] -> [g |- x: t] -> [g |- f @ x: b[x/]]
-
   | typing_conv:
     forall g e t1 t2,
     [g |- e: t1] -> [t1 <=> t2] -> [g |- e: t2]
@@ -1004,6 +1000,9 @@ with valid_context: context -> Prop :=
     forall g t, [g |- t: prop] -> valid_context (cons t g)
 
 where "[ g |- e : t ]" := (typing g e t): type_scope.
+
+Hint Constructors typing: coc.
+Hint Constructors valid_context: coc.
 
 Lemma typing_valid_context:
   forall g e t,
@@ -1125,4 +1124,49 @@ Proof.
     eexists; eauto.
     destruct H2.
     eexists; eauto with coc.
+Qed.
+
+Inductive insert x: nat -> context -> context -> Prop :=
+  | insert_car:
+    forall cdr, insert x 0 cdr (x :: cdr)
+  | insert_cdr :
+    forall n car cdr res,
+    insert x n cdr res -> insert x (S n) (car :: cdr) (lift 1 n car :: res).
+
+Hint Constructors insert: coc.
+
+Hint Resolve lift_distributes_over_subst: coc.
+Hint Rewrite lift_distributes_over_subst: coc.
+
+Lemma typing_weak_lift:
+  forall g e t,
+  [g |- e: t] ->
+  forall x n h,
+  insert x n g h -> valid_context h -> [h |- lift 1 n e: lift 1 n t].
+Proof.
+  induction 1; intros.
+  - apply typing_prop; auto.
+  - admit.
+  - apply typing_pi1; eauto with coc.
+  - apply typing_pi2; eauto with coc.
+  - apply typing_pi3; eauto with coc.
+  - apply typing_pi4; eauto with coc.
+  - apply typing_lambda1; eauto with coc.
+  - apply typing_lambda2; eauto with coc.
+  - apply typing_lambda3; eauto with coc.
+  - apply typing_lambda4; eauto with coc.
+  - simpl in * |- *.
+    rewrite lift_distributes_over_subst.
+    simple eapply typing_application; eauto with coc.
+  - eapply typing_conv; eauto with coc.
+Admitted.
+
+Theorem weaking:
+  forall g e t,
+  [g |- e: t] ->
+  forall x,
+  valid_context (x :: g) -> [x :: g |- lift 1 0 e: lift 1 0 t].
+Proof.
+  intros.
+  eapply typing_weak_lift; eauto with coc.
 Qed.
