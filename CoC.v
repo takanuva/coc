@@ -7,7 +7,9 @@ Require Import Equality.
 
     The syntax for our lambda calculus. The [type] and [prop] are our universes,
     and we use de Bruijn indexes on the [bound] constructor. The remainign [pi],
-    [lambda] and [application] constructors are self-explanatory. *)
+    [lambda] and [application] constructors are self-explanatory. Some auxiliary
+    notation is also defined. *)
+
 Inductive pseudoterm: Set :=
   | type
   | prop
@@ -19,17 +21,18 @@ Inductive pseudoterm: Set :=
 Hint Constructors pseudoterm: coc.
 
 Bind Scope coc_scope with pseudoterm.
-Notation "\ t , b" := (lambda t b)
-  (at level 70, t at level 70, b at level 70, format "\ t ,  b"): coc_scope.
+Coercion bound: nat >-> pseudoterm.
 Notation "\/ t , b" := (pi t b)
   (at level 70, t at level 70, b at level 70, format "\/ t ,  b"): coc_scope.
+Notation "\ t , b" := (lambda t b)
+  (at level 70, t at level 70, b at level 70, format "\ t ,  b"): coc_scope.
 Notation "f @ x" := (application f x)
   (at level 65, x at level 65, left associativity): coc_scope.
-Coercion bound: nat >-> pseudoterm.
 
 (** A subterm relation [subterm a b] defines that [a] is a direct subterm of
    [b]. This is useful for checking that our one-step reduction may be applied
    at any depth. *)
+
 Inductive subterm: pseudoterm -> pseudoterm -> Prop :=
   | subterm_pi_left:
     forall t b, subterm t (pi t b)
@@ -45,6 +48,8 @@ Inductive subterm: pseudoterm -> pseudoterm -> Prop :=
     forall f x, subterm x (application f x).
 
 Hint Constructors subterm: coc.
+
+(** *)
 
 Fixpoint lift (i: nat) (k: nat) (e: pseudoterm): pseudoterm :=
   match e with
@@ -92,7 +97,7 @@ Lemma lift_distributes_over_pi:
   forall t b i k,
   lift i k (pi t b) = pi (lift i k t) (lift i (S k) b).
 Proof.
-  eauto with coc.
+  auto.
 Qed.
 
 Hint Resolve lift_distributes_over_pi: coc.
@@ -101,7 +106,7 @@ Lemma lift_distributes_over_lambda:
   forall t b i k,
   lift i k (lambda t b) = lambda (lift i k t) (lift i (S k) b).
 Proof.
-  eauto with coc.
+  auto.
 Qed.
 
 Hint Resolve lift_distributes_over_lambda: coc.
@@ -110,10 +115,12 @@ Lemma lift_distributes_over_application:
   forall f x i k,
   lift i k (application f x) = application (lift i k f) (lift i k x).
 Proof.
-  eauto with coc.
+  auto.
 Qed.
 
 Hint Resolve lift_distributes_over_application: coc.
+
+(** *)
 
 Fixpoint subst (p: pseudoterm) (k: nat) (q: pseudoterm): pseudoterm :=
   match q with
@@ -142,7 +149,7 @@ Lemma subst_distributes_over_pi:
   forall t b i k,
   subst i k (pi t b) = pi (subst i k t) (subst i (S k) b).
 Proof.
-  eauto with coc.
+  auto.
 Qed.
 
 Hint Resolve subst_distributes_over_pi: coc.
@@ -151,7 +158,7 @@ Lemma subst_distributes_over_lambda:
   forall t b i k,
   subst i k (lambda t b) = lambda (subst i k t) (subst i (S k) b).
 Proof.
-  eauto with coc.
+  auto.
 Qed.
 
 Hint Resolve subst_distributes_over_lambda.
@@ -160,10 +167,12 @@ Lemma subst_distributes_over_application:
   forall f x i k,
   subst i k (application f x) = application (subst i k f) (subst i k x).
 Proof.
-  eauto with coc.
+  auto.
 Qed.
 
 Hint Resolve subst_distributes_over_application.
+
+(** *)
 
 Inductive step: pseudoterm -> pseudoterm -> Prop :=
   | step_beta:
@@ -438,6 +447,14 @@ Qed.
 
 Hint Resolve star_parallel: coc.
 
+(******************************************************************************)
+(*     __  __ ______  _____ _______     __    _____ ____  _____  ______ _     *)
+(*    |  \/  |  ____|/ ____/ ____\ \   / /   / ____/ __ \|  __ \|  ____| |    *)
+(*    | \  / | |__  | (___| (___  \ \_/ /   | |   | |  | | |  | | |__  | |    *)
+(*    | |\/| |  __|  \___ \\___ \  \   /    | |   | |  | | |  | |  __| | |    *)
+(*    | |  | | |____ ____) |___) |  | |     | |___| |__| | |__| | |____|_|    *)
+(*    |_|  |_|______|_____/_____/   |_|      \_____\____/|_____/|______(_)    *)
+(*                                                                            *)
 (******************************************************************************)
 
 Lemma inversion_star_pi:
@@ -835,6 +852,49 @@ Proof.
   apply confluency_implies_church_rosser.
   exact star_is_confluent.
 Qed.
+
+(******************************************************************************)
+
+Lemma step_lift:
+  forall a b,
+  [a => b] ->
+  forall i k,
+  [lift i k a => lift i k b].
+Proof.
+  induction 1; intros.
+  - rewrite lift_distributes_over_subst.
+    apply step_beta.
+  - apply step_pi_left; auto.
+  - apply step_pi_right; auto.
+  - apply step_lambda_left; auto.
+  - apply step_lambda_right; auto.
+  - apply step_application_left; auto.
+  - apply step_application_right; auto.
+Qed.
+
+Hint Resolve step_lift: coc.
+
+Lemma star_lift:
+  forall a b,
+  [a =>* b] ->
+  forall i k,
+  [lift i k a =>* lift i k b].
+Proof.
+  induction 1; eauto with coc.
+Qed.
+
+Hint Resolve star_lift: coc.
+
+Lemma conv_lift:
+  forall a b,
+  [a <=> b] ->
+  forall i k,
+  [lift i k a <=> lift i k b].
+Proof.
+  induction 1; eauto with coc.
+Qed.
+
+Hint Resolve conv_lift: coc.
 
 (******************************************************************************)
 
