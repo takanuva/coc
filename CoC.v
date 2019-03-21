@@ -1,12 +1,14 @@
 (******************************************************************************)
 (*      Copyright (c) 2019 - Paulo Torrens <paulotorrens AT gnu DOT org>      *)
 (******************************************************************************)
+(* * The Calculus of Constructions *)
+
 Require Import Arith.
 Require Import Compare_dec.
 Require Import Relations.
 Require Import Equality.
 
-(** * The Calculus of Constructions 
+(** ** Syntax
 
     The syntax for our lambda calculus. The [type] and [prop] are our universes,
     and we use de Bruijn indexes on the [bound] constructor. The remainign [pi],
@@ -52,7 +54,7 @@ Inductive subterm: pseudoterm -> pseudoterm -> Prop :=
 
 Hint Constructors subterm: coc.
 
-(** *)
+(** ** Lifting *)
 
 Fixpoint lift (i: nat) (k: nat) (e: pseudoterm): pseudoterm :=
   match e with
@@ -121,8 +123,6 @@ Proof.
     reflexivity.
 Qed.
 
-Hint Resolve lift_zero_e_equals_e: coc.
-
 Lemma lift_bound_ge:
   forall i k n,
   k <= n -> lift i k n = i + n.
@@ -133,8 +133,6 @@ Proof.
   - absurd (k <= n); eauto with arith.
 Qed.
 
-Hint Resolve lift_bound_ge.
-
 Lemma lift_bound_lt:
   forall i k n,
   k > n -> lift i k n = n.
@@ -144,8 +142,6 @@ Proof.
   - absurd (k <= n); eauto with arith.
   - reflexivity.
 Qed.
-
-Hint Resolve lift_bound_lt.
 
 Lemma lift_i_lift_j_equals_lift_i_plus_j:
   forall e i j k,
@@ -166,40 +162,40 @@ Proof.
   - intros; simpl; f_equal; auto.
 Qed.
 
-Hint Resolve lift_i_lift_j_equals_lift_i_plus_j: coc.
-
-Lemma lift_lift_simplify:
+Lemma lift_lift_permutation:
   forall e i j k l,
-  l <= k + j -> k <= l ->
-  lift i l (lift j k e) = lift (i + j) k e.
+  k <= l -> lift i k (lift j l e) = lift j (i + l) (lift i k e).
 Proof.
   induction e; intros.
   - auto.
   - auto.
   - simpl.
-    destruct (le_gt_dec k n).
-    + rewrite lift_bound_ge; auto with arith.
-      eapply le_trans; eauto.
-      rewrite plus_comm.
-      apply plus_le_compat_l.
-      assumption.
-    + rewrite lift_bound_lt; eauto with arith.
+    destruct (le_gt_dec l n); destruct (le_gt_dec k n); intros.
+    + rewrite lift_bound_ge.
+      rewrite lift_bound_ge; auto with arith.
+      do 2 elim plus_assoc_reverse; auto with arith.
+      eapply le_trans; eauto with arith.
+    + absurd (k <= n); eauto with arith.
+    + rewrite lift_bound_ge; auto.
+      rewrite lift_bound_lt; auto.
+      auto with arith.
+    + rewrite lift_bound_lt; auto.
+      rewrite lift_bound_lt; auto.
+      eauto with arith.
   - simpl; f_equal.
     apply IHe1; auto.
+    replace (S (i + l)) with (i + S l); auto.
     apply IHe2; auto with arith.
-    eauto with arith.
   - simpl; f_equal.
     apply IHe1; auto.
+    replace (S (i + l)) with (i + S l); auto.
     apply IHe2; auto with arith.
-    eauto with arith.
   - simpl; f_equal.
     apply IHe1; auto.
     apply IHe2; auto.
 Qed.
 
-Hint Resolve lift_lift_simplify: coc.
-
-(** *)
+(** ** Substitution *)
 
 Fixpoint subst (p: pseudoterm) (k: nat) (q: pseudoterm): pseudoterm :=
   match q with
@@ -614,29 +610,22 @@ Proof.
         replace (i + S n) with (S (i + n)); auto.
       * rewrite lift_bound_lt; auto with arith.
         rewrite subst_bound_gt; auto with arith.
-    + destruct (eq_sym e); clear e.
-      destruct (le_gt_dec (S (n + k)) n).
-      * rewrite lift_bound_ge; auto with arith.
-        rewrite lift_lift_simplify; auto with arith.
-        admit.
-      * rewrite lift_bound_lt; auto with arith.
-        admit.
+    + destruct e.
+      elim lift_lift_permutation; auto with arith.
+      rewrite lift_bound_lt; auto with arith.
+      rewrite subst_bound_eq; auto with arith.
     + rewrite lift_bound_lt; auto with arith.
       rewrite lift_bound_lt; auto with arith.
       rewrite subst_bound_lt; auto.
   (* Case: pi. *)
-  - simpl; f_equal.
-    + apply IHa1.
-    + replace (S (p + k)) with (S p + k); auto.
+  - simpl; f_equal; auto.
+    replace (S (p + k)) with (S p + k); auto.
   (* Case: lambda. *)
-  - simpl; f_equal.
-    + apply IHa1.
-    + replace (S (p + k)) with (S p + k); auto.
+  - simpl; f_equal; auto.
+    replace (S (p + k)) with (S p + k); auto.
   (* Case: application. *)
-  - simpl; f_equal.
-    + apply IHa1.
-    + replace (S (p + k)) with (S p + k); eauto.
-Admitted.
+  - simpl; f_equal; auto.
+Qed.
 
 Lemma lift_distributes_over_subst:
   forall a b i k,
@@ -659,23 +648,13 @@ Proof.
   (* Case: bound. *)
   - admit.
   (* Case: pi. *)
-  - simpl; f_equal.
-    + apply IHa1.
-    + replace (S (p + k)) with (S p + k).
-      apply IHa2.
-      auto.
+  - simpl; f_equal; auto.
+    replace (S (p + k)) with (S p + k); auto.
   (* Case: lambda. *)
-  - simpl; f_equal.
-    + apply IHa1.
-    + replace (S (p + k)) with (S p + k).
-      apply IHa2.
-      auto.
+  - simpl; f_equal; auto.
+    replace (S (p + k)) with (S p + k); auto.
   (* Case: application. *)
-  - simpl; f_equal.
-    + apply IHa1.
-    + replace (S (p + k)) with (S p + k).
-      apply IHa2.
-      auto.
+  - simpl; f_equal; auto.
 Admitted.
 
 Lemma subst_distributes_over_itself:
