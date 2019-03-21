@@ -168,6 +168,37 @@ Qed.
 
 Hint Resolve lift_i_lift_j_equals_lift_i_plus_j: coc.
 
+Lemma lift_lift_simplify:
+  forall e i j k l,
+  l <= k + j -> k <= l ->
+  lift i l (lift j k e) = lift (i + j) k e.
+Proof.
+  induction e; intros.
+  - auto.
+  - auto.
+  - simpl.
+    destruct (le_gt_dec k n).
+    + rewrite lift_bound_ge; auto with arith.
+      eapply le_trans; eauto.
+      rewrite plus_comm.
+      apply plus_le_compat_l.
+      assumption.
+    + rewrite lift_bound_lt; eauto with arith.
+  - simpl; f_equal.
+    apply IHe1; auto.
+    apply IHe2; auto with arith.
+    eauto with arith.
+  - simpl; f_equal.
+    apply IHe1; auto.
+    apply IHe2; auto with arith.
+    eauto with arith.
+  - simpl; f_equal.
+    apply IHe1; auto.
+    apply IHe2; auto.
+Qed.
+
+Hint Resolve lift_lift_simplify: coc.
+
 (** *)
 
 Fixpoint subst (p: pseudoterm) (k: nat) (q: pseudoterm): pseudoterm :=
@@ -481,9 +512,8 @@ Lemma star_parallel:
   forall a b,
   parallel a b -> [a =>* b].
 Proof.
-  simple induction 1; eauto with coc.
-  - intros.
-    eapply star_tran.
+  simple induction 1; intros.
+  - eapply star_tran.
     eapply star_tran.
     apply star_application_left.
     apply star_lambda_right.
@@ -491,6 +521,12 @@ Proof.
     apply star_application_right.
     exact H3.
     apply star_beta.
+  - auto with coc.
+  - auto with coc.
+  - auto with coc.
+  - eauto with coc.
+  - eauto with coc.
+  - eauto with coc.
 Qed.
 
 Hint Resolve star_parallel: coc.
@@ -581,6 +617,7 @@ Proof.
     + destruct (eq_sym e); clear e.
       destruct (le_gt_dec (S (n + k)) n).
       * rewrite lift_bound_ge; auto with arith.
+        rewrite lift_lift_simplify; auto with arith.
         admit.
       * rewrite lift_bound_lt; auto with arith.
         admit.
@@ -590,21 +627,15 @@ Proof.
   (* Case: pi. *)
   - simpl; f_equal.
     + apply IHa1.
-    + replace (S (p + k)) with (S p + k).
-      apply IHa2.
-      auto.
+    + replace (S (p + k)) with (S p + k); auto.
   (* Case: lambda. *)
   - simpl; f_equal.
     + apply IHa1.
-    + replace (S (p + k)) with (S p + k).
-      apply IHa2.
-      auto.
+    + replace (S (p + k)) with (S p + k); auto.
   (* Case: application. *)
   - simpl; f_equal.
     + apply IHa1.
-    + replace (S (p + k)) with (S p + k).
-      apply IHa2.
-      auto.
+    + replace (S (p + k)) with (S p + k); eauto.
 Admitted.
 
 Lemma lift_distributes_over_subst:
@@ -1162,9 +1193,6 @@ Inductive insert x: nat -> context -> context -> Prop :=
     insert x n cdr res -> insert x (S n) (car :: cdr) (lift 1 n car :: res).
 
 Hint Constructors insert: coc.
-
-Hint Resolve lift_distributes_over_subst: coc.
-Hint Rewrite lift_distributes_over_subst: coc.
 
 Lemma typing_weak_lift:
   forall g e t,
