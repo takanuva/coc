@@ -1,7 +1,7 @@
 (******************************************************************************)
 (*      Copyright (c) 2019 - Paulo Torrens <paulotorrens AT gnu DOT org>      *)
 (******************************************************************************)
-(* * The Calculus of Constructions *)
+(** * The Calculus of Constructions *)
 
 Require Import Arith.
 Require Import Compare_dec.
@@ -646,7 +646,25 @@ Proof.
   (* Case: prop. *)
   - reflexivity.
   (* Case: bound. *)
-  - admit.
+  - unfold subst at 2.
+    destruct (lt_eq_lt_dec p n) as [ [ ? | ? ] | ? ].
+    + destruct n.
+      inversion l.
+      unfold pred, subst at 1.
+      destruct (lt_eq_lt_dec (p + k) n) as [ [ ? | ? ] | ? ].
+      * rewrite subst_bound_gt; auto with arith.
+        rewrite subst_bound_gt; eauto with arith.
+      * rewrite subst_bound_eq; auto with arith.
+        admit.
+      * rewrite subst_bound_lt; eauto with arith.
+        rewrite subst_bound_gt; eauto with arith.
+    + destruct e.
+      rewrite subst_bound_lt; auto with arith.
+      rewrite subst_bound_eq; auto.
+      admit.
+    + rewrite subst_bound_lt; auto with arith.
+      rewrite subst_bound_lt; auto with arith.
+      rewrite subst_bound_lt; auto with arith.
   (* Case: pi. *)
   - simpl; f_equal; auto.
     replace (S (p + k)) with (S p + k); auto.
