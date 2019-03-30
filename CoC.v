@@ -236,7 +236,7 @@ Proof.
   auto.
 Qed.
 
-Hint Resolve subst_distributes_over_lambda.
+Hint Resolve subst_distributes_over_lambda: coc.
 
 Lemma subst_distributes_over_application:
   forall f x i k,
@@ -245,7 +245,7 @@ Proof.
   auto.
 Qed.
 
-Hint Resolve subst_distributes_over_application.
+Hint Resolve subst_distributes_over_application: coc.
 
 (** ** One-step reduction *)
 
