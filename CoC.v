@@ -1000,6 +1000,8 @@ Inductive item (e: pseudoterm): context -> nat -> Prop :=
   | item_cdr:
     forall car cdr n, item e cdr n -> item e (cons car cdr) (S n).
 
+Hint Constructors item: coc.
+
 Definition item_lift (e: pseudoterm) (g: context) (n: nat): Prop :=
   exists2 x, e = lift (S n) 0 x & item x g n.
 
@@ -1184,7 +1186,7 @@ Qed.
 Inductive insert x: nat -> context -> context -> Prop :=
   | insert_car:
     forall cdr, insert x 0 cdr (x :: cdr)
-  | insert_cdr :
+  | insert_cdr:
     forall n car cdr res,
     insert x n cdr res -> insert x (S n) (car :: cdr) (lift 1 n car :: res).
 
@@ -1196,9 +1198,17 @@ Lemma typing_weak_lift:
   forall x n h,
   insert x n g h -> valid_context h -> [h |- lift 1 n e: lift 1 n t].
 Proof.
-  induction 1; intros.
+  intros until 1.
+  dependent induction H; intros.
   - apply typing_prop; auto.
-  - admit.
+  - destruct H0; rewrite H0; clear H0; rename x0 into y.
+    induction H1.
+    + simpl.
+      apply typing_bound; auto.
+      exists y.
+      * rewrite lift_i_lift_j_equals_lift_i_plus_j; auto.
+      * auto with coc.
+    + admit.
   - apply typing_pi1; eauto with coc.
   - apply typing_pi2; eauto with coc.
   - apply typing_pi3; eauto with coc.
