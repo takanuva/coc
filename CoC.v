@@ -40,17 +40,17 @@ Notation "f @ x" := (application f x)
 
 Inductive subterm: pseudoterm -> pseudoterm -> Prop :=
   | subterm_pi_left:
-    forall t b, subterm t (pi t b)
+    forall t b, subterm t (\/t, b)
   | subterm_pi_right:
-    forall t b, subterm b (pi t b)
+    forall t b, subterm b (\/t, b)
   | subterm_lambda_left:
-    forall t b, subterm t (lambda t b)
+    forall t b, subterm t (\t, b)
   | subterm_lambda_right:
-    forall t b, subterm b (lambda t b)
+    forall t b, subterm b (\t, b)
   | subterm_application_left:
-    forall f x, subterm f (application f x)
+    forall f x, subterm f (f @ x)
   | subterm_application_right:
-    forall f x, subterm x (application f x).
+    forall f x, subterm x (f @ x).
 
 Hint Constructors subterm: coc.
 
@@ -130,7 +130,7 @@ Proof.
   intros; simpl.
   destruct (le_gt_dec k n).
   - reflexivity.
-  - absurd (k <= n); eauto with arith.
+  - absurd (k <= n); auto with arith.
 Qed.
 
 Lemma lift_bound_lt:
@@ -139,7 +139,7 @@ Lemma lift_bound_lt:
 Proof.
   intros; simpl.
   destruct (le_gt_dec k n).
-  - absurd (k <= n); eauto with arith.
+  - absurd (k <= n); auto with arith.
   - reflexivity.
 Qed.
 
@@ -247,34 +247,35 @@ Qed.
 
 Hint Resolve subst_distributes_over_application.
 
-(** *)
+(** ** One-step reduction *)
+
+Reserved Notation "[ a => b ]" (at level 0, a at level 99, b at level 99).
 
 Inductive step: pseudoterm -> pseudoterm -> Prop :=
   | step_beta:
     forall t b x,
-    step ((\t, b) @ x) (b[x/])
+    [(\t, b) @ x => b[x/]]
   | step_pi_left:
     forall t1 t2 b,
-    step t1 t2 -> step (\/t1, b) (\/t2, b)
+    [t1 => t2] -> [\/t1, b => \/t2, b]
   | step_pi_right:
     forall t b1 b2,
-    step b1 b2 -> step (\/t, b1) (\/t, b2)
+    [b1 => b2] -> [\/t, b1 => \/t, b2]
   | step_lambda_left:
     forall t1 t2 b,
-    step t1 t2 -> step (\t1, b) (\t2, b)
+    [t1 => t2] -> [\t1, b => \t2, b]
   | step_lambda_right:
     forall t b1 b2,
-    step b1 b2 -> step (\t, b1) (\t, b2)
+    [b1 => b2] -> [\t, b1 => \t, b2]
   | step_application_left:
     forall f1 f2 x,
-    step f1 f2 -> step (f1 @ x) (f2 @ x)
+    [f1 => f2] -> [f1 @ x => f2 @ x]
   | step_application_right:
     forall f x1 x2,
-    step x1 x2 -> step (f @ x1) (f @ x2).
+    [x1 => x2] -> [f @ x1 => f @ x2]
+where "[ a => b ]" := (step a b): type_scope.
 
 Hint Constructors step: coc.
-Notation "[ a => b ]" := (step a b)
-  (at level 0, a at level 99, b at level 99): type_scope.
 
 Definition star: pseudoterm -> pseudoterm -> Prop :=
   clos_refl_trans _ step.
@@ -1046,7 +1047,6 @@ Inductive typing: context -> pseudoterm -> pseudoterm -> Prop :=
   | typing_conv:
     forall g e t1 t2,
     [g |- e: t1] -> [t1 <=> t2] -> [g |- e: t2]
-
 with valid_context: context -> Prop :=
   | valid_context_nil:
     valid_context nil
@@ -1054,7 +1054,6 @@ with valid_context: context -> Prop :=
     forall g t, [g |- t: type] -> valid_context (cons t g)
   | valid_context_term_var:
     forall g t, [g |- t: prop] -> valid_context (cons t g)
-
 where "[ g |- e : t ]" := (typing g e t): type_scope.
 
 Hint Constructors typing: coc.
