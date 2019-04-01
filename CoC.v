@@ -162,6 +162,38 @@ Proof.
   - intros; simpl; f_equal; auto.
 Qed.
 
+Lemma lift_lift_simplification:
+  forall e i j k l,
+  k <= l + j -> l <= k -> lift i k (lift j l e) = lift (i + j) l e.
+Proof.
+  induction e; intros.
+  (* Case: type. *)
+  - auto.
+  (* Case: prop. *)
+  - auto.
+  (* Case: bound. *)
+  - simpl.
+    destruct (le_gt_dec l n).
+    + rewrite lift_bound_ge; auto with arith.
+      apply le_trans with (l + j); auto.
+      replace (l + j) with (j + l); auto with arith.
+    + rewrite lift_bound_lt; eauto with arith.
+  (* Case: pi. *)
+  - simpl; f_equal.
+    rewrite IHe1; auto.
+    rewrite IHe2; auto with arith.
+    eauto with arith.
+  (* Case: lambda. *)
+  - simpl; f_equal.
+    rewrite IHe1; auto.
+    rewrite IHe2; auto with arith.
+    eauto with arith.
+  (* Case: application. *)
+  - simpl; f_equal.
+    rewrite IHe1; auto.
+    rewrite IHe2; auto with arith.
+Qed.
+
 Lemma lift_lift_permutation:
   forall e i j k l,
   k <= l -> lift i k (lift j l e) = lift j (i + l) (lift i k e).
@@ -1201,14 +1233,18 @@ Proof.
   intros until 1.
   dependent induction H; intros.
   - apply typing_prop; auto.
-  - destruct H0; rewrite H0; clear H0; rename x0 into y.
-    induction H1.
+  - destruct H0; rewrite H0; clear H0.
+    rename x0 into y.
+    dependent induction H1.
     + simpl.
       apply typing_bound; auto.
-      exists y.
-      * rewrite lift_i_lift_j_equals_lift_i_plus_j; auto.
-      * auto with coc.
-    + admit.
+      exists y; auto with coc.
+      rewrite lift_i_lift_j_equals_lift_i_plus_j; auto.
+    + rename n0 into m.
+      unfold lift at 2.
+      destruct (le_gt_dec (S m) n).
+      * admit.
+      * admit.
   - apply typing_pi1; eauto with coc.
   - apply typing_pi2; eauto with coc.
   - apply typing_pi3; eauto with coc.
