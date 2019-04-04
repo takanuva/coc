@@ -11,7 +11,7 @@ Require Import Equality.
 (** ** Syntax
 
     The syntax for our lambda calculus. The [type] and [prop] are our universes,
-    and we use de Bruijn indexes on the [bound] constructor. The remainign [pi],
+    and we use de Bruijn indexes on the [bound] constructor. The standard [pi],
     [lambda] and [application] constructors are self-explanatory. Some auxiliary
     notation is also defined. *)
 
@@ -54,7 +54,11 @@ Inductive subterm: pseudoterm -> pseudoterm -> Prop :=
 
 Hint Constructors subterm: coc.
 
-(** ** Lifting *)
+(** ** Lifting
+
+    Since we're dealing with de Bruijn index, we need a notion of lifting for
+    bound variables, used whenever we add an existing pseudoterm inside of a new
+    abstraction. Lifting is also used by the notion of substitution. *)
 
 Fixpoint lift (i: nat) (k: nat) (e: pseudoterm): pseudoterm :=
   match e with
@@ -106,18 +110,26 @@ Lemma lift_zero_e_equals_e:
   forall e k,
   lift 0 k e = e.
 Proof.
-  induction e; auto with coc.
-  - intro; unfold lift.
+  induction e; intros.
+  (* Case: type. *)
+  - auto.
+  (* Case: prop. *)
+  - auto.
+  (* Case: bound. *)
+  - simpl.
     destruct (le_gt_dec k n); reflexivity.
-  - unfold lift in * |- *; intro.
+  (* Case: pi. *)
+  - simpl.
     rewrite (IHe1 k).
     rewrite (IHe2 (S k)).
     reflexivity.
-  - unfold lift in * |- *; intro.
+  (* Case: lambda. *)
+  - simpl.
     rewrite (IHe1 k).
     rewrite (IHe2 (S k)).
     reflexivity.
-  - unfold lift in * |- *; intro.
+  (* Case: application. *)
+  - simpl.
     rewrite (IHe1 k).
     rewrite (IHe2 k).
     reflexivity.
@@ -129,7 +141,9 @@ Lemma lift_bound_ge:
 Proof.
   intros; simpl.
   destruct (le_gt_dec k n).
+  (* Case: k <= n. *)
   - reflexivity.
+  (* Case: k > n. *)
   - absurd (k <= n); auto with arith.
 Qed.
 
@@ -148,8 +162,11 @@ Lemma lift_i_lift_j_equals_lift_i_plus_j:
   lift i k (lift j k e) = lift (i + j) k e.
 Proof.
   induction e; intros.
+  (* Case: type. *)
   - auto.
+  (* Case: prop. *)
   - auto.
+  (* Case: bound. *)
   - simpl.
     destruct (le_gt_dec k n).
     + rewrite plus_assoc_reverse.
@@ -157,8 +174,11 @@ Proof.
       apply le_trans with n; auto.
       apply le_plus_r.
     + apply lift_bound_lt; auto.
+  (* Case: pi. *)
   - intros; simpl; f_equal; auto.
+  (* Case: lambda. *)
   - intros; simpl; f_equal; auto.
+  (* Case: application. *)
   - intros; simpl; f_equal; auto.
 Qed.
 
@@ -199,8 +219,11 @@ Lemma lift_lift_permutation:
   k <= l -> lift i k (lift j l e) = lift j (i + l) (lift i k e).
 Proof.
   induction e; intros.
+  (* Case: type. *)
   - auto.
+  (* Case: prop. *)
   - auto.
+  (* Case: bound. *)
   - simpl.
     destruct (le_gt_dec l n); destruct (le_gt_dec k n); intros.
     + rewrite lift_bound_ge.
@@ -214,14 +237,17 @@ Proof.
     + rewrite lift_bound_lt; auto.
       rewrite lift_bound_lt; auto.
       eauto with arith.
+  (* Case: pi. *)
   - simpl; f_equal.
     apply IHe1; auto.
     replace (S (i + l)) with (i + S l); auto.
     apply IHe2; auto with arith.
+  (* Case: lambda. *)
   - simpl; f_equal.
     apply IHe1; auto.
     replace (S (i + l)) with (i + S l); auto.
     apply IHe2; auto with arith.
+  (* Case: application. *)
   - simpl; f_equal.
     apply IHe1; auto.
     apply IHe2; auto.
@@ -278,316 +304,6 @@ Proof.
 Qed.
 
 Hint Resolve subst_distributes_over_application: coc.
-
-(** ** One-step reduction *)
-
-Reserved Notation "[ a => b ]" (at level 0, a at level 99, b at level 99).
-
-Inductive step: pseudoterm -> pseudoterm -> Prop :=
-  | step_beta:
-    forall t b x,
-    [(\t, b) @ x => b[x/]]
-  | step_pi_left:
-    forall t1 t2 b,
-    [t1 => t2] -> [\/t1, b => \/t2, b]
-  | step_pi_right:
-    forall t b1 b2,
-    [b1 => b2] -> [\/t, b1 => \/t, b2]
-  | step_lambda_left:
-    forall t1 t2 b,
-    [t1 => t2] -> [\t1, b => \t2, b]
-  | step_lambda_right:
-    forall t b1 b2,
-    [b1 => b2] -> [\t, b1 => \t, b2]
-  | step_application_left:
-    forall f1 f2 x,
-    [f1 => f2] -> [f1 @ x => f2 @ x]
-  | step_application_right:
-    forall f x1 x2,
-    [x1 => x2] -> [f @ x1 => f @ x2]
-where "[ a => b ]" := (step a b): type_scope.
-
-Hint Constructors step: coc.
-
-Definition star: pseudoterm -> pseudoterm -> Prop :=
-  clos_refl_trans _ step.
-
-Hint Unfold star: coc.
-Hint Constructors clos_refl_trans: coc.
-Notation "[ a =>* b ]" := (star a b)
-  (at level 0, a at level 99, b at level 99): type_scope.
-
-Lemma star_beta:
-  forall t b x,
-  [(\t, b) @ x =>* b[x/]].
-Proof.
-  auto with coc.
-Qed.
-
-Hint Resolve star_beta: coc.
-
-Lemma star_step:
-  forall a b,
-  [a => b] -> [a =>* b].
-Proof.
-  auto with coc.
-Qed.
-
-Hint Resolve star_step: coc.
-
-Lemma star_symm:
-  forall a,
-  [a =>* a].
-Proof.
-  auto with coc.
-Qed.
-
-Hint Resolve star_symm: coc.
-
-Lemma star_tran:
-  forall a b c,
-  [a =>* b] -> [b =>* c] -> [a =>* c].
-Proof.
-  eauto with coc.
-Qed.
-
-Hint Resolve star_tran: coc.
-
-Lemma star_pi_left:
-  forall t1 t2 b,
-  [t1 =>* t2] -> [\/t1, b =>* \/t2, b].
-Proof.
-  induction 1; eauto with coc.
-Qed.
-
-Hint Resolve star_pi_left: coc.
-
-Lemma star_pi_right:
-  forall t b1 b2,
-  [b1 =>* b2] -> [\/t, b1 =>* \/t, b2].
-Proof.
-  induction 1; eauto with coc.
-Qed.
-
-Hint Resolve star_pi_right: coc.
-
-Lemma star_lambda_left:
-  forall t1 t2 b,
-  [t1 =>* t2] -> [\t1, b =>* \t2, b].
-Proof.
-  induction 1; eauto with coc.
-Qed.
-
-Hint Resolve star_lambda_left: coc.
-
-Lemma star_lambda_right:
-  forall t b1 b2,
-  [b1 =>* b2] -> [\t, b1 =>* \t, b2].
-Proof.
-  induction 1; eauto with coc.
-Qed.
-
-Hint Resolve star_lambda_right: coc.
-
-Lemma star_application_left:
-  forall f1 f2 x,
-  [f1 =>* f2] -> [f1 @ x =>* f2 @ x].
-Proof.
-  induction 1; eauto with coc.
-Qed.
-
-Hint Resolve star_application_left: coc.
-
-Lemma star_application_right:
-  forall f x1 x2,
-  [x1 =>* x2] -> [f @ x1 =>* f @ x2].
-Proof.
-  induction 1; eauto with coc.
-Qed.
-
-Hint Resolve star_application_right: coc.
-
-Definition conv: pseudoterm -> pseudoterm -> Prop :=
-  clos_refl_sym_trans _ step.
-
-Hint Unfold conv: coc.
-Hint Constructors clos_refl_sym_trans: coc.
-Notation "[ a <=> b ]" := (conv a b)
-  (at level 0, a at level 99, b at level 99): type_scope.
-
-Lemma conv_beta:
-  forall t b x,
-  [(\t, b) @ x <=> b[x/]].
-Proof.
-  auto with coc.
-Qed.
-
-Hint Resolve conv_beta: coc.
-
-Lemma conv_step:
-  forall a b,
-  [a => b] -> [a <=> b].
-Proof.
-  auto with coc.
-Qed.
-
-Hint Resolve conv_step: coc.
-
-Lemma conv_star:
-  forall a b,
-  [a =>* b] -> [a <=> b].
-Proof.
-  induction 1; eauto with coc.
-Qed.
-
-Hint Resolve conv_star: coc.
-
-Lemma conv_refl:
-  forall a,
-  [a <=> a].
-Proof.
-  auto with coc.
-Qed.
-
-Hint Resolve conv_refl: coc.
-
-Lemma conv_tran:
-  forall a b c,
-  [a <=> b] -> [b <=> c] -> [a <=> c].
-Proof.
-  eauto with coc.
-Qed.
-
-Hint Resolve conv_tran: coc.
-
-Lemma conv_symm:
-  forall a b,
-  [a <=> b] -> [b <=> a].
-Proof.
-  auto with coc.
-Qed.
-
-Hint Resolve conv_symm: coc.
-
-Lemma subterm_and_step_commute:
-  commut _ subterm (transp _ step).
-Proof.
-  induction 1; compute; eauto with coc.
-Qed.
-
-Hint Unfold transp: coc.
-
-Definition normal (a: pseudoterm): Prop :=
-  forall b, ~[a => b].
-
-Definition strongly_normalizing: pseudoterm -> Prop :=
-  Acc (transp _ step).
-
-Lemma subterm_of_normalizing_is_normalizing:
-  forall a,
-  strongly_normalizing a ->
-  forall b,
-  subterm b a -> strongly_normalizing b.
-Proof.
-  compute.
-  simple induction 1.
-  intros.
-  constructor.
-  intros.
-  edestruct subterm_and_step_commute; eauto.
-Qed.
-
-Inductive parallel: pseudoterm -> pseudoterm -> Prop :=
-  | parallel_beta:
-    forall t b1 b2 x1 x2,
-    parallel b1 b2 -> parallel x1 x2 -> parallel ((\t, b1) @ x1) (b2[x2/])
-  | parallel_type:
-    parallel type type
-  | parallel_prop:
-    parallel prop prop
-  | parallel_bound:
-    forall n, parallel (bound n) (bound n)
-  | parallel_pi:
-    forall t1 t2 b1 b2,
-    parallel t1 t2 -> parallel b1 b2 -> parallel (\/t1, b1) (\/t2, b2)
-  | parallel_lambda:
-    forall t1 t2 b1 b2,
-    parallel t1 t2 -> parallel b1 b2 -> parallel (\t1, b1) (\t2, b2)
-  | parallel_application:
-    forall f1 f2 x1 x2,
-    parallel f1 f2 -> parallel x1 x2 -> parallel (f1 @ x1) (f2 @ x2).
-
-Hint Constructors parallel: coc.
-
-Lemma parallel_refl:
-  forall e,
-  parallel e e.
-Proof.
-  simple induction e; auto with coc.
-Qed.
-
-Hint Resolve parallel_refl: coc.
-
-Lemma parallel_step:
-  forall a b,
-  [a => b] -> parallel a b.
-Proof.
-  induction 1; auto with coc.
-Qed.
-
-Hint Resolve parallel_step: coc.
-
-Lemma star_parallel:
-  forall a b,
-  parallel a b -> [a =>* b].
-Proof.
-  simple induction 1; intros.
-  - eapply star_tran.
-    eapply star_tran.
-    apply star_application_left.
-    apply star_lambda_right.
-    exact H1.
-    apply star_application_right.
-    exact H3.
-    apply star_beta.
-  - auto with coc.
-  - auto with coc.
-  - auto with coc.
-  - eauto with coc.
-  - eauto with coc.
-  - eauto with coc.
-Qed.
-
-Hint Resolve star_parallel: coc.
-
-(******************************************************************************)
-(*     __  __ ______  _____ _______     __    _____ ____  _____  ______ _     *)
-(*    |  \/  |  ____|/ ____/ ____\ \   / /   / ____/ __ \|  __ \|  ____| |    *)
-(*    | \  / | |__  | (___| (___  \ \_/ /   | |   | |  | | |  | | |__  | |    *)
-(*    | |\/| |  __|  \___ \\___ \  \   /    | |   | |  | | |  | |  __| | |    *)
-(*    | |  | | |____ ____) |___) |  | |     | |___| |__| | |__| | |____|_|    *)
-(*    |_|  |_|______|_____/_____/   |_|      \_____\____/|_____/|______(_)    *)
-(*                                                                            *)
-(******************************************************************************)
-
-Lemma inversion_star_pi:
-  forall t1 b1 e,
-  [\/t1, b1 =>* e] ->
-  forall P: Prop,
-  (forall t2 b2, e = pi t2 b2 -> [t1 =>* t2] -> [b1 =>* b2] -> P) -> P.
-Proof.
-  intros until 1.
-  dependent induction H; intros.
-  - inversion H; subst.
-    + eapply H0; eauto with coc.
-    + eapply H0; eauto with coc.
-  - eauto with coc.
-  - eapply IHclos_refl_trans1; eauto; intros; subst.
-    eapply IHclos_refl_trans2; eauto; intros; subst.
-    eapply H1; eauto with coc.
-Defined.
-
-(******************************************************************************)
 
 Lemma subst_bound_gt:
   forall e k n,
@@ -717,6 +433,248 @@ Proof.
   apply subst_addition_distributes_over_itself.
 Qed.
 
+(** ** One-step reduction *)
+
+Reserved Notation "[ a => b ]" (at level 0, a at level 99, b at level 99).
+
+Inductive step: pseudoterm -> pseudoterm -> Prop :=
+  | step_beta:
+    forall t b x,
+    [(\t, b) @ x => b[x/]]
+  | step_pi_left:
+    forall t1 t2 b,
+    [t1 => t2] -> [\/t1, b => \/t2, b]
+  | step_pi_right:
+    forall t b1 b2,
+    [b1 => b2] -> [\/t, b1 => \/t, b2]
+  | step_lambda_left:
+    forall t1 t2 b,
+    [t1 => t2] -> [\t1, b => \t2, b]
+  | step_lambda_right:
+    forall t b1 b2,
+    [b1 => b2] -> [\t, b1 => \t, b2]
+  | step_application_left:
+    forall f1 f2 x,
+    [f1 => f2] -> [f1 @ x => f2 @ x]
+  | step_application_right:
+    forall f x1 x2,
+    [x1 => x2] -> [f @ x1 => f @ x2]
+where "[ a => b ]" := (step a b): type_scope.
+
+Hint Constructors step: coc.
+
+(** ** Multi-step reduction *)
+
+Definition star: pseudoterm -> pseudoterm -> Prop :=
+  clos_refl_trans _ step.
+
+Hint Unfold star: coc.
+Hint Constructors clos_refl_trans: coc.
+Notation "[ a =>* b ]" := (star a b)
+  (at level 0, a at level 99, b at level 99): type_scope.
+
+Lemma star_beta:
+  forall t b x,
+  [(\t, b) @ x =>* b[x/]].
+Proof.
+  auto with coc.
+Qed.
+
+Hint Resolve star_beta: coc.
+
+Lemma star_step:
+  forall a b,
+  [a => b] -> [a =>* b].
+Proof.
+  auto with coc.
+Qed.
+
+Hint Resolve star_step: coc.
+
+Lemma star_symm:
+  forall a,
+  [a =>* a].
+Proof.
+  auto with coc.
+Qed.
+
+Hint Resolve star_symm: coc.
+
+Lemma star_tran:
+  forall a b c,
+  [a =>* b] -> [b =>* c] -> [a =>* c].
+Proof.
+  eauto with coc.
+Qed.
+
+Hint Resolve star_tran: coc.
+
+Lemma star_pi_left:
+  forall t1 t2 b,
+  [t1 =>* t2] -> [\/t1, b =>* \/t2, b].
+Proof.
+  induction 1; eauto with coc.
+Qed.
+
+Hint Resolve star_pi_left: coc.
+
+Lemma star_pi_right:
+  forall t b1 b2,
+  [b1 =>* b2] -> [\/t, b1 =>* \/t, b2].
+Proof.
+  induction 1; eauto with coc.
+Qed.
+
+Hint Resolve star_pi_right: coc.
+
+Lemma star_lambda_left:
+  forall t1 t2 b,
+  [t1 =>* t2] -> [\t1, b =>* \t2, b].
+Proof.
+  induction 1; eauto with coc.
+Qed.
+
+Hint Resolve star_lambda_left: coc.
+
+Lemma star_lambda_right:
+  forall t b1 b2,
+  [b1 =>* b2] -> [\t, b1 =>* \t, b2].
+Proof.
+  induction 1; eauto with coc.
+Qed.
+
+Hint Resolve star_lambda_right: coc.
+
+Lemma star_application_left:
+  forall f1 f2 x,
+  [f1 =>* f2] -> [f1 @ x =>* f2 @ x].
+Proof.
+  induction 1; eauto with coc.
+Qed.
+
+Hint Resolve star_application_left: coc.
+
+Lemma star_application_right:
+  forall f x1 x2,
+  [x1 =>* x2] -> [f @ x1 =>* f @ x2].
+Proof.
+  induction 1; eauto with coc.
+Qed.
+
+Hint Resolve star_application_right: coc.
+
+(** ** Term conversion *)
+
+Definition conv: pseudoterm -> pseudoterm -> Prop :=
+  clos_refl_sym_trans _ step.
+
+Hint Unfold conv: coc.
+Hint Constructors clos_refl_sym_trans: coc.
+Notation "[ a <=> b ]" := (conv a b)
+  (at level 0, a at level 99, b at level 99): type_scope.
+
+Lemma conv_beta:
+  forall t b x,
+  [(\t, b) @ x <=> b[x/]].
+Proof.
+  auto with coc.
+Qed.
+
+Hint Resolve conv_beta: coc.
+
+Lemma conv_step:
+  forall a b,
+  [a => b] -> [a <=> b].
+Proof.
+  auto with coc.
+Qed.
+
+Hint Resolve conv_step: coc.
+
+Lemma conv_star:
+  forall a b,
+  [a =>* b] -> [a <=> b].
+Proof.
+  induction 1; eauto with coc.
+Qed.
+
+Hint Resolve conv_star: coc.
+
+Lemma conv_refl:
+  forall a,
+  [a <=> a].
+Proof.
+  auto with coc.
+Qed.
+
+Hint Resolve conv_refl: coc.
+
+Lemma conv_tran:
+  forall a b c,
+  [a <=> b] -> [b <=> c] -> [a <=> c].
+Proof.
+  eauto with coc.
+Qed.
+
+Hint Resolve conv_tran: coc.
+
+Lemma conv_symm:
+  forall a b,
+  [a <=> b] -> [b <=> a].
+Proof.
+  auto with coc.
+Qed.
+
+Hint Resolve conv_symm: coc.
+
+Lemma subterm_and_step_commute:
+  commut _ subterm (transp _ step).
+Proof.
+  induction 1; compute; eauto with coc.
+Qed.
+
+Hint Unfold transp: coc.
+
+Inductive parallel: pseudoterm -> pseudoterm -> Prop :=
+  | parallel_beta:
+    forall t b1 b2 x1 x2,
+    parallel b1 b2 -> parallel x1 x2 -> parallel ((\t, b1) @ x1) (b2[x2/])
+  | parallel_type:
+    parallel type type
+  | parallel_prop:
+    parallel prop prop
+  | parallel_bound:
+    forall n, parallel (bound n) (bound n)
+  | parallel_pi:
+    forall t1 t2 b1 b2,
+    parallel t1 t2 -> parallel b1 b2 -> parallel (\/t1, b1) (\/t2, b2)
+  | parallel_lambda:
+    forall t1 t2 b1 b2,
+    parallel t1 t2 -> parallel b1 b2 -> parallel (\t1, b1) (\t2, b2)
+  | parallel_application:
+    forall f1 f2 x1 x2,
+    parallel f1 f2 -> parallel x1 x2 -> parallel (f1 @ x1) (f2 @ x2).
+
+Hint Constructors parallel: coc.
+
+Lemma parallel_refl:
+  forall e,
+  parallel e e.
+Proof.
+  simple induction e; auto with coc.
+Qed.
+
+Hint Resolve parallel_refl: coc.
+
+Lemma parallel_step:
+  forall a b,
+  [a => b] -> parallel a b.
+Proof.
+  induction 1; auto with coc.
+Qed.
+
+Hint Resolve parallel_step: coc.
+
 Lemma parallel_lift:
   forall a b,
   parallel a b ->
@@ -761,28 +719,75 @@ Lemma parallel_subst:
   parallel (subst c k a) (subst d k b).
 Proof.
   simple induction 1.
+  (* Case: parallel_beta. *)
   - intros.
     rewrite subst_distributes_over_application.
     rewrite subst_distributes_over_lambda.
     rewrite subst_distributes_over_itself.
     auto with coc.
+  (* Case: parallel_type. *)
   - auto with coc.
+  (* Case: parallel_prop. *)
   - auto with coc.
+  (* Case: parallel_bound. *)
   - intros.
     unfold subst.
     destruct (lt_eq_lt_dec k n) as [ [ ? | ? ] | ? ]; auto with coc.
+  (* Case: parallel_pi. *)
   - intros.
     do 2 rewrite subst_distributes_over_pi.
     auto with coc.
+  (* Case: parallel_lambda. *)
   - intros.
     do 2 rewrite subst_distributes_over_lambda.
     auto with coc.
+  (* Case: parallel_application. *)
   - intros.
     do 2 rewrite subst_distributes_over_application.
     auto with coc.
 Qed.
 
 Hint Resolve parallel_subst: coc.
+
+Lemma star_parallel:
+  forall a b,
+  parallel a b -> [a =>* b].
+Proof.
+  simple induction 1; intros.
+  (* Case: parallel_beta. *)
+  - eapply star_tran.
+    eapply star_tran.
+    apply star_application_left.
+    apply star_lambda_right.
+    exact H1.
+    apply star_application_right.
+    exact H3.
+    apply star_beta.
+  (* Case: parallel_type. *)
+  - auto with coc.
+  (* Case: parallel_prop. *)
+  - auto with coc.
+  (* Case: parallel_bound. *)
+  - auto with coc.
+  (* Case: parallel_pi. *)
+  - eauto with coc.
+  (* Case: parallel_lambda. *)
+  - eauto with coc.
+  (* Case: parallel_application. *)
+  - eauto with coc.
+Qed.
+
+Hint Resolve star_parallel: coc.
+
+(******************************************************************************)
+(*     __  __ ______  _____ _______     __    _____ ____  _____  ______ _     *)
+(*    |  \/  |  ____|/ ____/ ____\ \   / /   / ____/ __ \|  __ \|  ____| |    *)
+(*    | \  / | |__  | (___| (___  \ \_/ /   | |   | |  | | |  | | |__  | |    *)
+(*    | |\/| |  __|  \___ \\___ \  \   /    | |   | |  | | |  | |  __| | |    *)
+(*    | |  | | |____ ____) |___) |  | |     | |___| |__| | |__| | |____|_|    *)
+(*    |_|  |_|______|_____/_____/   |_|      \_____\____/|_____/|______(_)    *)
+(*                                                                            *)
+(******************************************************************************)
 
 Definition confluent {T} (R: T -> T -> Prop): Prop :=
   commut _ R (transp _ R).
@@ -986,6 +991,26 @@ Qed.
 Hint Resolve conv_lift: coc.
 
 (******************************************************************************)
+
+Definition normal (a: pseudoterm): Prop :=
+  forall b, ~[a => b].
+
+Definition strongly_normalizing: pseudoterm -> Prop :=
+  Acc (transp _ step).
+
+Lemma subterm_of_normalizing_is_normalizing:
+  forall a,
+  strongly_normalizing a ->
+  forall b,
+  subterm b a -> strongly_normalizing b.
+Proof.
+  compute.
+  simple induction 1.
+  intros.
+  constructor.
+  intros.
+  edestruct subterm_and_step_commute; eauto.
+Qed.
 
 Lemma inversion_star_normal:
   forall a b,
