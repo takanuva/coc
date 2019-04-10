@@ -627,6 +627,62 @@ Qed.
 
 Hint Resolve conv_symm: coc.
 
+Lemma conv_pi_left:
+  forall t1 t2 b,
+  [t1 <=> t2] -> [\/t1, b <=> \/t2, b].
+Proof.
+  induction 1; eauto with coc.
+Qed.
+
+Hint Resolve conv_pi_left: coc.
+
+Lemma conv_pi_right:
+  forall t b1 b2,
+  [b1 <=> b2] -> [\/t, b1 <=> \/t, b2].
+Proof.
+  induction 1; eauto with coc.
+Qed.
+
+Hint Resolve conv_pi_right: coc.
+
+Lemma conv_lambda_left:
+  forall t1 t2 b,
+  [t1 <=> t2] -> [\t1, b <=> \t2, b].
+Proof.
+  induction 1; eauto with coc.
+Qed.
+
+Hint Resolve conv_lambda_left: coc.
+
+Lemma conv_lambda_right:
+  forall t b1 b2,
+  [b1 <=> b2] -> [\t, b1 <=> \t, b2].
+Proof.
+  induction 1; eauto with coc.
+Qed.
+
+Hint Resolve conv_lambda_right: coc.
+
+Lemma conv_application_left:
+  forall f1 f2 x,
+  [f1 <=> f2] -> [f1 @ x <=> f2 @ x].
+Proof.
+  induction 1; eauto with coc.
+Qed.
+
+Hint Resolve conv_application_left: coc.
+
+Lemma conv_application_right:
+  forall f x1 x2,
+  [x1 <=> x2] -> [f @ x1 <=> f @ x2].
+Proof.
+  induction 1; eauto with coc.
+Qed.
+
+Hint Resolve conv_application_right: coc.
+
+(******************************************************************************)
+
 Lemma subterm_and_step_commute:
   commut _ subterm (transp _ step).
 Proof.
@@ -1362,12 +1418,31 @@ Proof.
   (* Case: typing_lambda1. *)
   - destruct inversion_typing_lambda with g t e t2; auto.
     destruct H4; destruct H5.
+    eapply conv_tran.
+    apply conv_pi_right.
+    apply IHtyping3; eauto.
+    apply conv_symm; auto.
   (* Case: typing_lambda2. *)
-  - admit.
+  - destruct inversion_typing_lambda with g t e t2; auto.
+    destruct H4; destruct H5.
+    eapply conv_tran.
+    apply conv_pi_right.
+    apply IHtyping3; eauto.
+    apply conv_symm; auto.
   (* Case: typing_lambda3. *)
-  - admit.
+  - destruct inversion_typing_lambda with g t e t2; auto.
+    destruct H4; destruct H5.
+    eapply conv_tran.
+    apply conv_pi_right.
+    apply IHtyping3; eauto.
+    apply conv_symm; auto.
   (* Case: typing_lambda4. *)
-  - admit.
+  - destruct inversion_typing_lambda with g t e t2; auto.
+    destruct H4; destruct H5.
+    eapply conv_tran.
+    apply conv_pi_right.
+    apply IHtyping3; eauto.
+    apply conv_symm; auto.
   (* Case: typing_application. *)
   - admit.
   (* Case: typing_conv. *)
