@@ -1062,6 +1062,21 @@ Hint Constructors item: coc.
 Definition item_lift (e: pseudoterm) (g: context) (n: nat): Prop :=
   exists2 x, e = lift (S n) 0 x & item x g n.
 
+Lemma item_lift_unique:
+  forall a b g n,
+  item_lift a g n -> item_lift b g n -> a = b.
+Proof.
+  intros.
+  destruct H, H0.
+  rewrite H, H0; clear H H0.
+  generalize n.
+  induction H1.
+  - inversion H2.
+    reflexivity.
+  - inversion_clear H2.
+    eauto.
+Qed.
+
 Reserved Notation "[ g |- e : t ]"
   (at level 0, g at level 99, e at level 99, t at level 99,
    format "[ g  |-  e :  t ]").
@@ -1224,6 +1239,27 @@ Proof.
     eapply typing_conv; eauto.
 Qed.
 
+Lemma inversion_typing_lambda:
+  forall g t2 b t,
+  [g |- \t2, b: t] ->
+  exists2 s1, [g |- t2: s1] &
+    exists2 u, [t2 :: g |- b: u] &
+      exists2 s2, [t2 :: g |- u: s2] & [t <=> \/t2, u].
+Proof.
+  intros until 1.
+  dependent induction H.
+  - eauto with coc.
+  - eauto with coc.
+  - eauto with coc.
+  - eauto with coc.
+  - destruct IHtyping with t2 b; auto.
+    eexists; eauto.
+    destruct H2.
+    eexists; eauto.
+    destruct H3.
+    eexists; eauto with coc.
+Qed.
+
 Lemma inversion_typing_application:
   forall g f x t,
   [g |- f @ x: t] ->
@@ -1293,3 +1329,47 @@ Proof.
   intros.
   eapply typing_weak_lift; eauto with coc.
 Qed.
+
+Theorem substitution:
+  forall e t u U d,
+  [t :: e |- u: U] -> [e |- d: t] -> [e |- u[d/]: U[d/]].
+Proof.
+Admitted.
+
+Theorem typing_unique_up_to_conv:
+  forall g e t1,
+  [g |- e: t1] ->
+  forall t2,
+  [g |- e: t2] -> [t1 <=> t2].
+Proof.
+  induction 1; intros.
+  (* Case: typing_prop. *)
+  - apply conv_symm.
+    apply inversion_typing_prop with g.
+    auto.
+  (* Case: typing_bound. *)
+  - edestruct inversion_typing_bound; eauto.
+    destruct item_lift_unique with t x g n; auto.
+    apply conv_symm; auto.
+  (* Case: typing_pi1. *)
+  - destruct inversion_typing_pi with g t b t2; auto.
+  (* Case: typing_pi2. *)
+  - destruct inversion_typing_pi with g t b t2; auto.
+  (* Case: typing_pi3. *)
+  - destruct inversion_typing_pi with g t b t2; auto.
+  (* Case: typing_pi4. *)
+  - destruct inversion_typing_pi with g t b t2; auto.
+  (* Case: typing_lambda1. *)
+  - destruct inversion_typing_lambda with g t e t2; auto.
+    destruct H4; destruct H5.
+  (* Case: typing_lambda2. *)
+  - admit.
+  (* Case: typing_lambda3. *)
+  - admit.
+  (* Case: typing_lambda4. *)
+  - admit.
+  (* Case: typing_application. *)
+  - admit.
+  (* Case: typing_conv. *)
+  - eauto with coc.
+Admitted.
