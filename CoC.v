@@ -835,6 +835,76 @@ Qed.
 
 Hint Resolve star_parallel: coc.
 
+Lemma star_subst_left:
+  forall b1 b2,
+  [b1 =>* b2] ->
+  forall x,
+  [b1[x/] =>* b2[x/]].
+Proof.
+  intros until 1.
+  dependent induction H; eauto with coc.
+Qed.
+
+Hint Resolve star_subst_left: coc.
+
+Lemma star_subst_right:
+  forall x1 x2,
+  [x1 =>* x2] ->
+  forall b,
+  [b[x1/] =>* b[x2/]].
+Proof.
+  intros until 1.
+  dependent induction H; eauto with coc.
+Qed.
+
+Hint Resolve star_subst_right: coc.
+
+Lemma star_subst:
+  forall b1 b2,
+  [b1 =>* b2] ->
+  forall x1 x2,
+  [x1 =>* x2] -> [b1[x1/] =>* b2[x2/]].
+Proof.
+  eauto with coc.
+Qed.
+
+Hint Resolve star_subst: coc.
+
+Lemma conv_subst_left:
+  forall b1 b2,
+  [b1 <=> b2] ->
+  forall x,
+  [b1[x/] <=> b2[x/]].
+Proof.
+  intros until 1.
+  dependent induction H; eauto with coc.
+Qed.
+
+Hint Resolve conv_subst_left: coc.
+
+Lemma conv_subst_right:
+  forall x1 x2,
+  [x1 <=> x2] ->
+  forall b,
+  [b[x1/] <=> b[x2/]].
+Proof.
+  intros until 1.
+  dependent induction H; eauto with coc.
+Qed.
+
+Hint Resolve conv_subst_right: coc.
+
+Lemma conv_subst:
+  forall b1 b2,
+  [b1 <=> b2] ->
+  forall x1 x2,
+  [x1 <=> x2] -> [b1[x1/] <=> b2[x2/]].
+Proof.
+  eauto with coc.
+Qed.
+
+Hint Resolve conv_subst: coc.
+
 (******************************************************************************)
 (*     __  __ ______  _____ _______     __    _____ ____  _____  ______ _     *)
 (*    |  \/  |  ____|/ ____/ ____\ \   / /   / ____/ __ \|  __ \|  ____| |    *)
