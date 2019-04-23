@@ -1075,6 +1075,14 @@ Qed.
 
 (******************************************************************************)
 
+Lemma inversion_conv_pi:
+  forall t b x,
+  [\/t, b <=> x] ->
+  exists2 t2, [t <=> t2] &
+    exists2 b2, [b <=> b2] & x = pi t2 b2.
+Proof.
+Admitted.
+
 Lemma step_lift:
   forall a b,
   [a => b] ->
@@ -1514,7 +1522,14 @@ Proof.
     apply IHtyping3; eauto.
     apply conv_symm; auto.
   (* Case: typing_application. *)
-  - admit.
+  - destruct inversion_typing_application with g f x t2; auto.
+    destruct H3.
+    apply conv_symm.
+    eapply conv_tran; eauto.
+    apply conv_subst_left.
+    destruct (inversion_conv_pi _ _ _ (IHtyping1 _ H3)).
+    destruct H6; inversion H7.
+    eauto with coc.
   (* Case: typing_conv. *)
   - eauto with coc.
-Admitted.
+Qed.
