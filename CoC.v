@@ -1075,13 +1075,50 @@ Qed.
 
 (******************************************************************************)
 
-Lemma inversion_conv_pi:
+Lemma inversion_star_pi:
   forall t b x,
-  [\/t, b <=> x] ->
-  exists2 t2, [t <=> t2] &
-    exists2 b2, [b <=> b2] & x = pi t2 b2.
+  [\/t, b =>* x] ->
+  exists2 t2, [t =>* t2] &
+    exists2 b2, [b =>* b2] & x = pi t2 b2.
 Proof.
-Admitted.
+  intros until 1.
+  dependent induction H.
+  (* Case: step. *)
+  - inversion_clear H.
+    + exists t2; auto with coc.
+      exists b; auto with coc.
+    + exists t; auto with coc.
+      exists b2; auto with coc.
+  (* Case: refl. *)
+  - exists t; auto with coc.
+    exists b; auto with coc.
+  (* Case: tran. *)
+  - destruct IHclos_refl_trans1 with t b; auto.
+    destruct H2.
+    destruct IHclos_refl_trans2 with x x0; auto.
+    destruct H5.
+    exists x1.
+    eauto with coc.
+    exists x2.
+    eauto with coc.
+    assumption.
+Qed.
+
+Lemma inversion_conv_pi:
+  forall t b t2 b2,
+  [\/t, b <=> \/t2, b2] -> [t <=> t2] /\ [b <=> b2].
+Proof.
+  intros.
+  elim step_is_church_rosser with (pi t b) (pi t2 b2); fold star conv.
+  - intros.
+    destruct inversion_star_pi with t b x; auto.
+    destruct H3, (eq_sym H4); clear H4.
+    destruct inversion_star_pi with t2 b2 (pi x0 x1); auto.
+    destruct H5.
+    inversion H6; destruct H8, H9.
+    split; eauto with coc.
+  - assumption.
+Qed.
 
 Lemma step_lift:
   forall a b,
@@ -1527,9 +1564,10 @@ Proof.
     apply conv_symm.
     eapply conv_tran; eauto.
     apply conv_subst_left.
-    destruct (inversion_conv_pi _ _ _ (IHtyping1 _ H3)).
-    destruct H6; inversion H7.
-    eauto with coc.
+    eapply inversion_conv_pi.
+    apply conv_symm.
+    apply IHtyping1.
+    eassumption.
   (* Case: typing_conv. *)
   - eauto with coc.
 Qed.
