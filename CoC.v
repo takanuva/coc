@@ -1311,60 +1311,7 @@ Proof.
   induction 1; assumption.
 Qed.
 
-Lemma foobar:
-  forall g e t,
-  typing g e t ->
-    match e with
-    | type =>
-      False
-    | prop =>
-      conv t type
-    | bound n =>
-      exists2 x, item_lift x g n & conv t x
-    | pi t2 b =>
-      exists2 s1, typing g t2 s1 &
-        exists2 s2, typing (t2 :: g) b s2 & conv t s2
-    | lambda t2 b =>
-      exists2 s1, typing g t2 s1 &
-        exists2 u, typing (t2 :: g) b u &
-          exists2 s2, typing (t2 :: g) u s2 & conv t (\/t2, u)
-    | application f x =>
-      exists2 t2, typing g x t2 &
-        exists2 b, typing g f (\/t2, b) & conv t (b[x/])
-    end.
-Proof.
-  induction 1; simpl; intros.
-  - auto with coc.
-  - eauto with coc.
-  - eauto with coc.
-  - eauto with coc.
-  - eauto with coc.
-  - eauto with coc.
-  - eauto with coc.
-  - eauto with coc.
-  - eauto with coc.
-  - eauto with coc.
-  - eauto with coc.
-  - induction e.
-    + trivial.
-    + eauto with coc.
-    + destruct IHtyping.
-      eauto with coc.
-    + destruct IHtyping.
-      eexists; eauto with coc.
-      destruct H2.
-      eexists; eauto with coc.
-    + destruct IHtyping.
-      eexists; eauto with coc.
-      destruct H2.
-      eexists; eauto with coc.
-      destruct H3;
-      eexists; eauto with coc.
-    + destruct IHtyping.
-      eexists; eauto with coc.
-      destruct H2.
-      eexists; eauto with coc.
-Qed.
+Hint Resolve typing_valid_context: coc.
 
 Lemma inversion_typing_type:
   forall g t,
@@ -1501,6 +1448,8 @@ Proof.
   eapply typing_weak_lift; eauto with coc.
 Qed.
 
+Hint Resolve weakening: coc.
+
 Theorem substitution:
   forall e t u U d,
   [t :: e |- u: U] -> [e |- d: t] -> [e |- u[d/]: U[d/]].
@@ -1571,3 +1520,55 @@ Proof.
   (* Case: typing_conv. *)
   - eauto with coc.
 Qed.
+
+Hint Resolve typing_unique_up_to_conv: coc.
+
+Lemma well_founded_lift_has_sort:
+  forall g n t,
+  valid_context g -> item_lift t g n ->
+  [g |- t: prop] \/ [g |- t: type].
+Proof.
+  induction n; intros.
+  (* Case: zero. *)
+  - destruct g; destruct H0.
+    + inversion H1.
+    + rewrite H0; clear H0.
+      inversion_clear H; inversion_clear H1.
+      * right; replace type with (lift 1 0 type); eauto with coc.
+      * left; replace prop with (lift 1 0 prop); eauto with coc.
+  (* Case: succ. *)
+  - admit.
+Admitted.
+
+Lemma typing_case:
+  forall g e t,
+  [g |- e: t] ->
+  t = type \/ [g |- t: prop] \/ [g |- t: type].
+Proof.
+  intros until 1.
+  dependent induction H.
+  (* Case: typing_prop. *)
+  - auto.
+  (* Case: typing_bound. *)
+  - admit.
+  (* Case: typing_pi1. *)
+  - auto.
+  (* Case: typing_pi2. *)
+  - auto.
+  (* Case: typing_pi3. *)
+  - eauto with coc.
+  (* Case: typing_pi4. *)
+  - eauto with coc.
+  (* Case: typing_lambda1. *)
+  - eauto with coc.
+  (* Case: typing_lambda2. *)
+  - eauto with coc.
+  (* Case: typing_lambda3. *)
+  - eauto with coc.
+  (* Case: typing_lambda4. *)
+  - eauto with coc.
+  (* Case: typing_application. *)
+  - admit.
+  (* Case: typing_conv. *)
+  - admit.
+Admitted.
