@@ -1590,5 +1590,97 @@ Proof.
   (* Case: typing_application. *)
   - admit.
   (* Case: typing_conv. *)
+  - (* Huh... we need subject reduction... *)
+    admit.
+Admitted.
+
+(******************************************************************************)
+
+Inductive context_step: context -> context -> Prop :=
+  | context_step_car:
+    forall g t u,
+    [t => u] -> context_step (t :: g) (u :: g)
+  | context_step_cdr:
+    forall g h t,
+    context_step g h -> context_step (t :: g) (t :: h).
+
+Hint Constructors context_step: coc.
+
+Lemma typing_preserved_under_context_step:
+  forall g e t,
+  [g |- e: t] ->
+  forall h,
+  context_step g h -> valid_context h -> [h |- e: t].
+Proof.
+  intros until 1.
+  dependent induction H; intros.
+  (* Case: typing_prop. *)
+  - auto with coc.
+  (* Case: typing_bound. *)
+  - admit.
+  (* Case: typing_pi1. *)
+  - admit.
+  (* Case: typing_pi2. *)
+  - admit.
+  (* Case: typing_pi3. *)
+  - admit.
+  (* Case: typing_pi4. *)
+  - admit.
+  (* Case: typing_lambda1. *)
+  - admit.
+  (* Case: typing_lambda2. *)
+  - admit.
+  (* Case: typing_lambda3. *)
+  - admit.
+  (* Case: typing_lambda4. *)
+  - admit.
+  (* Case: typing_application. *)
+  - admit.
+  (* Case: typing_conv. *)
+  - apply typing_conv with t1; auto.
+Admitted.
+
+Lemma typing_step:
+  forall g e1 t,
+  [g |- e1: t] ->
+  forall e2,
+  [e1 => e2] -> [g |- e2: t].
+Proof.
+  intros until 1.
+  dependent induction H; intros.
+  (* Case: typing_prop. *)
+  - admit.
+  (* Case: typing_bound. *)
+  - admit.
+  (* Case: typing_pi1. *)
+  - admit.
+  (* Case: typing_pi2. *)
+  - admit.
+  (* Case: typing_pi3. *)
+  - admit.
+  (* Case: typing_pi4. *)
+  - admit.
+  (* Case: typing_lambda1. *)
+  - admit.
+  (* Case: typing_lambda2. *)
+  - admit.
+  (* Case: typing_lambda3. *)
+  - admit.
+  (* Case: typing_lambda4. *)
+  - admit.
+  (* Case: typing_application. *)
+  - admit.
+  (* Case: typing_conv. *)
   - admit.
 Admitted.
+
+Hint Resolve typing_step: coc.
+
+Theorem subject_reduction:
+  forall e1 e2,
+  [e1 =>* e2] ->
+  forall g t,
+  [g |- e1: t] -> [g |- e2: t].
+Proof.
+  simple induction 1; eauto with coc.
+Qed.
