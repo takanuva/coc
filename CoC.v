@@ -1610,6 +1610,29 @@ Inductive context_step: context -> context -> Prop :=
 
 Hint Constructors context_step: coc.
 
+Lemma item_lift_preserved_under_context_step:
+  forall t g n,
+  item_lift t g n ->
+  forall h,
+  context_step g h -> valid_context h ->
+  item_lift t h n \/ exists2 u, [t => u] & item_lift u h n.
+Proof.
+  induction n; intros.
+  (* Case: zero. *)
+  - destruct H.
+    inversion H2.
+    destruct H3.
+    inversion H0; destruct H4.
+    + right.
+      exists (lift 1 0 u).
+      * rewrite H; eauto with coc.
+      * exists u; eauto with coc.
+    + left.
+      exists x; eauto with coc.
+  (* Case: succ. *)
+  - admit.
+Qed.
+
 Lemma typing_preserved_under_context_step:
   forall g e t,
   [g |- e: t] ->
@@ -1621,7 +1644,12 @@ Proof.
   (* Case: typing_prop. *)
   - auto with coc.
   (* Case: typing_bound. *)
-  - admit.
+  - edestruct item_lift_preserved_under_context_step.
+    + exact H0.
+    + exact H1.
+    + exact H2.
+    + auto with coc.
+    + destruct H3; eauto with coc.
   (* Case: typing_pi1. *)
   - apply typing_pi1; eauto with coc.
   (* Case: typing_pi2. *)
@@ -1642,7 +1670,7 @@ Proof.
   - eapply typing_application; eauto with coc.
   (* Case: typing_conv. *)
   - apply typing_conv with t1; auto.
-Admitted.
+Qed.
 
 Hint Resolve typing_preserved_under_context_step: coc.
 
