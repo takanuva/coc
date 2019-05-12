@@ -1120,6 +1120,8 @@ Proof.
   - assumption.
 Qed.
 
+Hint Resolve inversion_conv_pi: coc.
+
 Lemma step_lift:
   forall a b,
   [a => b] ->
@@ -1450,11 +1452,13 @@ Qed.
 
 Hint Resolve weakening: coc.
 
-Theorem substitution:
+Theorem typing_subst:
   forall e t u U d,
   [t :: e |- u: U] -> [e |- d: t] -> [e |- u[d/]: U[d/]].
 Proof.
 Admitted.
+
+Hint Resolve typing_subst: coc.
 
 Theorem typing_unique_up_to_conv:
   forall g e t1,
@@ -1642,6 +1646,23 @@ Admitted.
 
 Hint Resolve typing_preserved_under_context_step: coc.
 
+Lemma inversion_typing_lambda_body:
+  forall g t1 e x,
+  [g |- \t1, e: x] ->
+  forall b,
+  [x <=> \/t1, b] -> [t1 :: g |- e: b].
+Proof.
+  intros until 1.
+  dependent induction H; intros.
+  - edestruct inversion_conv_pi; eauto with coc.
+  - edestruct inversion_conv_pi; eauto with coc.
+  - edestruct inversion_conv_pi; eauto with coc.
+  - edestruct inversion_conv_pi; eauto with coc.
+  - eauto with coc.
+Qed.
+
+Hint Resolve inversion_typing_lambda_body: coc.
+
 Lemma typing_preserved_under_step:
   forall g e1 t,
   [g |- e1: t] ->
@@ -1695,10 +1716,24 @@ Proof.
       eauto with coc.
     + apply typing_lambda4; auto.
   (* Case: typing_application. *)
-  - admit.
+  - inversion H1.
+    + destruct H2, H3, (eq_sym H4); clear H4.
+      edestruct inversion_typing_lambda.
+      exact H.
+      destruct H3.
+      destruct H4.
+      edestruct inversion_conv_pi.
+      exact H5.
+      apply typing_subst with t0; auto.
+      eapply inversion_typing_lambda_body.
+      exact H.
+      eauto with coc.
+      eauto with coc.
+    + apply typing_application with t; auto.
+    + apply typing_conv with (subst x2 0 b); eauto with coc.
   (* Case: typing_conv. *)
-  - admit.
-Admitted.
+  - eauto with coc.
+Qed.
 
 Hint Resolve typing_preserved_under_step: coc.
 
