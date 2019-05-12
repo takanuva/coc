@@ -1640,7 +1640,9 @@ Proof.
   - apply typing_conv with t1; auto.
 Admitted.
 
-Lemma typing_step:
+Hint Resolve typing_preserved_under_context_step: coc.
+
+Lemma typing_preserved_under_step:
   forall g e1 t,
   [g |- e1: t] ->
   forall e2,
@@ -1649,32 +1651,56 @@ Proof.
   intros until 1.
   dependent induction H; intros.
   (* Case: typing_prop. *)
-  - admit.
+  - inversion H0; auto.
   (* Case: typing_bound. *)
-  - admit.
+  - inversion H1.
   (* Case: typing_pi1. *)
-  - admit.
+  - inversion_clear H1.
+    + apply typing_pi1; eauto with coc.
+    + apply typing_pi1; eauto with coc.
   (* Case: typing_pi2. *)
-  - admit.
+  - inversion_clear H1.
+    + apply typing_pi2; eauto with coc.
+    + apply typing_pi2; eauto with coc.
   (* Case: typing_pi3. *)
-  - admit.
+  - inversion_clear H1.
+    + apply typing_pi3; eauto with coc.
+    + apply typing_pi3; eauto with coc.
   (* Case: typing_pi4. *)
-  - admit.
+  - inversion_clear H1.
+    + apply typing_pi4; eauto with coc.
+    + apply typing_pi4; eauto with coc.
   (* Case: typing_lambda1. *)
-  - admit.
+  - inversion_clear H2.
+    + apply typing_conv with (pi t2 u).
+      apply typing_lambda1; eauto with coc.
+      eauto with coc.
+    + apply typing_lambda1; auto.
   (* Case: typing_lambda2. *)
-  - admit.
+  - inversion_clear H2.
+    + apply typing_conv with (pi t2 u).
+      apply typing_lambda2; eauto with coc.
+      eauto with coc.
+    + apply typing_lambda2; auto.
   (* Case: typing_lambda3. *)
-  - admit.
+  - inversion_clear H2.
+    + apply typing_conv with (pi t2 u).
+      apply typing_lambda3; eauto with coc.
+      eauto with coc.
+    + apply typing_lambda3; auto.
   (* Case: typing_lambda4. *)
-  - admit.
+  - inversion_clear H2.
+    + apply typing_conv with (pi t2 u).
+      apply typing_lambda4; eauto with coc.
+      eauto with coc.
+    + apply typing_lambda4; auto.
   (* Case: typing_application. *)
   - admit.
   (* Case: typing_conv. *)
   - admit.
 Admitted.
 
-Hint Resolve typing_step: coc.
+Hint Resolve typing_preserved_under_step: coc.
 
 Theorem subject_reduction:
   forall e1 e2,
