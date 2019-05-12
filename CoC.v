@@ -1623,23 +1623,23 @@ Proof.
   (* Case: typing_bound. *)
   - admit.
   (* Case: typing_pi1. *)
-  - admit.
+  - apply typing_pi1; eauto with coc.
   (* Case: typing_pi2. *)
-  - admit.
+  - apply typing_pi2; eauto with coc.
   (* Case: typing_pi3. *)
-  - admit.
+  - apply typing_pi3; eauto with coc.
   (* Case: typing_pi4. *)
-  - admit.
+  - apply typing_pi4; eauto with coc.
   (* Case: typing_lambda1. *)
-  - admit.
+  - apply typing_lambda1; eauto with coc.
   (* Case: typing_lambda2. *)
-  - admit.
+  - apply typing_lambda2; eauto with coc.
   (* Case: typing_lambda3. *)
-  - admit.
+  - apply typing_lambda3; eauto with coc.
   (* Case: typing_lambda4. *)
-  - admit.
+  - apply typing_lambda4; eauto with coc.
   (* Case: typing_application. *)
-  - admit.
+  - eapply typing_application; eauto with coc.
   (* Case: typing_conv. *)
   - apply typing_conv with t1; auto.
 Admitted.
