@@ -385,7 +385,67 @@ Proof.
   apply lift_addition_distributes_over_subst.
 Qed.
 
-Lemma subst_addition_distributes_over_itself :
+Lemma subst_lift_simplification:
+   forall a b i p k,
+   p <= i + k ->
+   k <= p -> subst b p (lift (S i) k a) = lift i k a.
+Proof.
+  induction a; intros.
+  (* Case: type. *)
+  - reflexivity.
+  (* Case: prop. *)
+  - reflexivity.
+  (* Case: bound. *)
+  - simpl.
+    destruct (le_gt_dec k n).
+    + rewrite subst_bound_gt; eauto with arith.
+    + rewrite subst_bound_lt; eauto with arith.
+  (* Case: pi. *)
+  - simpl; f_equal.
+    + rewrite IHa1; auto.
+    + rewrite IHa2; auto with arith.
+      elim plus_n_Sm; auto with arith.
+  (* Case: lambda. *)
+  - simpl; f_equal.
+    + rewrite IHa1; auto.
+    + rewrite IHa2; auto with arith.
+      elim plus_n_Sm; auto with arith.
+  (* Case: application. *)
+  - simpl; f_equal.
+    + rewrite IHa1; auto.
+    + rewrite IHa2; auto.
+Qed.
+
+Lemma commut_lift_subst_rec:
+  forall a b i p k,
+  k <= p ->
+  lift i k (subst b p a) = subst b (i + p) (lift i k a).
+Proof.
+  induction a; intros.
+  (* Case: type. *)
+  - reflexivity.
+  (* Case: prop. *)
+  - reflexivity.
+  (* Case: bound. *)
+  - simpl.
+    admit.
+  (* Case: pi. *)
+  - simpl; f_equal.
+    + rewrite IHa1; auto.
+    + rewrite IHa2; auto with arith.
+      elim plus_n_Sm; auto with arith.
+  (* Case: lambda. *)
+  - simpl; f_equal.
+    + rewrite IHa1; auto.
+    + rewrite IHa2; auto with arith.
+      elim plus_n_Sm; auto with arith.
+  (* Case: application. *)
+  - simpl; f_equal.
+    + rewrite IHa1; auto.
+    + rewrite IHa2; auto.
+Admitted.
+
+Lemma subst_addition_distributes_over_itself:
   forall a b c p k,
   subst c (p + k) (subst b p a) = subst (subst c k b) p (subst c (S (p + k)) a).
 Proof.
@@ -403,14 +463,15 @@ Proof.
       destruct (lt_eq_lt_dec (p + k) n) as [ [ ? | ? ] | ? ].
       * rewrite subst_bound_gt; auto with arith.
         rewrite subst_bound_gt; eauto with arith.
-      * rewrite subst_bound_eq; auto with arith.
-        admit.
+      * rewrite e; clear e.
+        rewrite subst_bound_eq; auto.
+        rewrite subst_lift_simplification; auto with arith.
       * rewrite subst_bound_lt; eauto with arith.
         rewrite subst_bound_gt; eauto with arith.
     + destruct e.
       rewrite subst_bound_lt; auto with arith.
       rewrite subst_bound_eq; auto.
-      admit.
+      rewrite commut_lift_subst_rec; auto with arith.
     + rewrite subst_bound_lt; auto with arith.
       rewrite subst_bound_lt; auto with arith.
       rewrite subst_bound_lt; auto with arith.
@@ -422,7 +483,7 @@ Proof.
     replace (S (p + k)) with (S p + k); auto.
   (* Case: application. *)
   - simpl; f_equal; auto.
-Admitted.
+Qed.
 
 Lemma subst_distributes_over_itself:
   forall a b c k,
