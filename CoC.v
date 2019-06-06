@@ -1485,6 +1485,50 @@ Inductive insert x: nat -> context -> context -> Prop :=
 
 Hint Constructors insert: coc.
 
+Lemma insert_bound_ge:
+  forall x n g h,
+  insert x n g h ->
+  forall m,
+  n <= m ->
+  forall y, item y g m -> item y h (S m).
+Proof.
+  induction 1; intros.
+  - auto with coc.
+  - destruct m.
+    + inversion H0.
+    + inversion_clear H1.
+      auto with coc arith.
+Qed.
+
+Lemma insert_bound_lt:
+ forall e n g h,
+ insert e n g h ->
+ forall m,
+ n > m -> forall t, item_lift t g m -> item_lift (lift 1 n t) h m.
+Proof.
+  induction 1; intros.
+  - inversion H.
+  - destruct m.
+    + destruct H1; rewrite H1; clear H1.
+      inversion_clear H2.
+      eexists; auto with coc.
+      symmetry.
+      rewrite lift_lift_permutation; auto with arith.
+    + inversion H1.
+      rewrite H2; clear H2.
+      inversion_clear H3.
+      edestruct IHinsert; eauto with arith.
+      * exists x; eauto with coc.
+      * rename x0 into y.
+        exists y; auto with coc.
+        replace (lift (S (S m)) 0 y) with (lift 1 0 (lift (S m) 0 y)).
+        elim H3.
+        rewrite lift_lift_permutation with (i := 1) (k := 0); auto with arith.
+        rewrite lift_i_lift_j_equals_lift_i_plus_j.
+        reflexivity.
+        rewrite lift_lift_simplification; eauto with arith.
+Qed.
+
 Lemma typing_weak_lift:
   forall g e t,
   [g |- e: t] ->
@@ -1496,18 +1540,15 @@ Proof.
   (* Case: typing_prop. *)
   - apply typing_prop; auto.
   (* Case: typing_bound. *)
-  - destruct H0; rewrite H0; clear H0.
-    rename x0 into y.
-    dependent induction H1.
-    + simpl.
-      apply typing_bound; auto.
-      exists y; auto with coc.
-      rewrite lift_i_lift_j_equals_lift_i_plus_j; auto.
-    + rename n0 into m.
-      unfold lift at 2.
-      destruct (le_gt_dec (S m) n).
-      * admit.
-      * admit.
+  - simpl; rename n0 into m.
+    destruct (le_gt_dec m n); apply typing_bound; auto.
+    + inversion H0.
+      rewrite H3; clear H3.
+      rename x0 into y.
+      rewrite lift_lift_simplification; simpl; auto with arith.
+      exists y; auto.
+      eapply insert_bound_ge; eauto.
+    + eapply insert_bound_lt; eauto.
   (* Case: typing_pi1. *)
   - apply typing_pi1; eauto with coc.
   (* Case: typing_pi2. *)
@@ -1530,7 +1571,7 @@ Proof.
     simple eapply typing_application; eauto with coc.
   (* Case: typing_conv. *)
   - eapply typing_conv; eauto with coc.
-Admitted.
+Qed.
 
 Theorem weakening:
   forall g e t,
