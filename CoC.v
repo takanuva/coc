@@ -934,8 +934,8 @@ Hint Resolve star_subst: coc.
 Lemma conv_subst_left:
   forall b1 b2,
   [b1 <=> b2] ->
-  forall x,
-  [b1[x/] <=> b2[x/]].
+  forall x n,
+  [subst x n b1 <=> subst x n b2].
 Proof.
   intros until 1.
   dependent induction H; eauto with coc.
@@ -946,8 +946,8 @@ Hint Resolve conv_subst_left: coc.
 Lemma conv_subst_right:
   forall x1 x2,
   [x1 <=> x2] ->
-  forall b,
-  [b[x1/] <=> b[x2/]].
+  forall b n,
+  [subst x1 n b <=> subst x2 n b].
 Proof.
   intros until 1.
   dependent induction H; eauto with coc.
@@ -959,7 +959,9 @@ Lemma conv_subst:
   forall b1 b2,
   [b1 <=> b2] ->
   forall x1 x2,
-  [x1 <=> x2] -> [b1[x1/] <=> b2[x2/]].
+  [x1 <=> x2] ->
+  forall n,
+  [subst x1 n b1 <=> subst x2 n b2].
 Proof.
   eauto with coc.
 Qed.
@@ -1651,10 +1653,13 @@ Proof.
   (* Case: typing_application. *)
   - rewrite subst_distributes_over_itself.
     simpl; eapply typing_application.
-    + apply IHtyping1; eauto.
-    + apply IHtyping2; eauto.
+    + apply IHtyping1; auto.
+    + apply IHtyping2; auto.
   (* Case: typing_bound. *)
-  - admit.
+  - eapply typing_conv.
+    + apply IHtyping1; auto.
+    + admit.
+    +  apply IHtyping2; auto.
 Admitted.
 
 Theorem typing_subst:
