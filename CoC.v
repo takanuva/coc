@@ -1573,7 +1573,7 @@ Proof.
   - eapply typing_conv; eauto with coc.
 Qed.
 
-Theorem weakening:
+Theorem typing_lift:
   forall g e t,
   [g |- e: t] ->
   forall x,
@@ -1583,15 +1583,93 @@ Proof.
   eapply typing_weak_lift; eauto with coc.
 Qed.
 
-Hint Resolve weakening: coc.
+Hint Resolve typing_lift: coc.
 
-Theorem typing_subst:
-  forall e t u U d,
-  [t :: e |- u: U] -> [e |- d: t] -> [e |- u[d/]: U[d/]].
+(******************************************************************************)
+
+Inductive substitute x y: nat -> context -> context -> Prop :=
+  | substitute_car:
+    forall cdr,
+    substitute x y 0 (y :: cdr) cdr
+  | substitute_cdr:
+    forall n car cdr res,
+    substitute x y n cdr res ->
+    substitute x y (S n) (car :: cdr) (subst x n car :: res).
+
+Hint Constructors substitute: coc.
+
+Lemma typing_weak_subst:
+  forall g d t,
+  [g |- d: t] ->
+  forall e u U,
+  [e |- u: U] ->
+  forall f n,
+  substitute d t n e f ->
+  valid_context f -> [f |- subst d n u: subst d n U].
 Proof.
+  induction 2; intros.
+  (* Case: typing_prop. *)
+  - auto with coc.
+  (* Case: typing_bound. *)
+  - admit.
+  (* Case: typing_pi1. *)
+  - simpl; apply typing_pi1.
+    + apply IHtyping1; auto.
+    + apply IHtyping2; eauto with coc.
+  (* Case: typing_pi2. *)
+  - simpl; apply typing_pi2.
+    + apply IHtyping1; auto.
+    + apply IHtyping2; eauto with coc.
+  (* Case: typing_pi3. *)
+  - simpl; apply typing_pi3.
+    + apply IHtyping1; auto.
+    + apply IHtyping2; eauto with coc.
+  (* Case: typing_pi4. *)
+  - simpl; apply typing_pi4.
+    + apply IHtyping1; auto.
+    + apply IHtyping2; eauto with coc.
+  (* Case: typing_lambda1. *)
+  - simpl; apply typing_lambda1.
+    + apply IHtyping1; auto.
+    + apply IHtyping2; eauto with coc.
+    + apply IHtyping3; eauto with coc.
+  (* Case: typing_lambda2. *)
+  - simpl; apply typing_lambda2.
+    + apply IHtyping1; auto.
+    + apply IHtyping2; eauto with coc.
+    + apply IHtyping3; eauto with coc.
+  (* Case: typing_lambda3. *)
+  - simpl; apply typing_lambda3.
+    + apply IHtyping1; auto.
+    + apply IHtyping2; eauto with coc.
+    + apply IHtyping3; eauto with coc.
+  (* Case: typing_lambda4. *)
+  - simpl; apply typing_lambda4.
+    + apply IHtyping1; auto.
+    + apply IHtyping2; eauto with coc.
+    + apply IHtyping3; eauto with coc.
+  (* Case: typing_application. *)
+  - rewrite subst_distributes_over_itself.
+    simpl; eapply typing_application.
+    + apply IHtyping1; eauto.
+    + apply IHtyping2; eauto.
+  (* Case: typing_bound. *)
+  - admit.
 Admitted.
 
+Theorem typing_subst:
+  forall g e1 t1 t2,
+  [t2 :: g |- e1: t1] ->
+  forall x,
+  [g |- x: t2] -> [g |- e1[x/]: t1[x/]].
+Proof.
+  intros.
+  eapply typing_weak_subst; eauto with coc.
+Qed.
+
 Hint Resolve typing_subst: coc.
+
+(******************************************************************************)
 
 Theorem typing_unique_up_to_conv:
   forall g e t1,
@@ -1702,6 +1780,41 @@ Qed.
 
 (******************************************************************************)
 
+Lemma typing_case:
+  forall g e t,
+  [g |- e: t] -> t = type \/ [g |- t: prop] \/ [g |- t: type].
+Proof.
+  intros until 1.
+  dependent induction H.
+  (* Case: typing_prop. *)
+  - auto.
+  (* Case: typing_bound. *)
+  - right.
+    apply well_founded_lift_has_sort with n; auto.
+  (* Case: typing_pi1. *)
+  - auto.
+  (* Case: typing_pi2. *)
+  - auto.
+  (* Case: typing_pi3. *)
+  - eauto with coc.
+  (* Case: typing_pi4. *)
+  - eauto with coc.
+  (* Case: typing_lambda1. *)
+  - eauto with coc.
+  (* Case: typing_lambda2. *)
+  - eauto with coc.
+  (* Case: typing_lambda3. *)
+  - eauto with coc.
+  (* Case: typing_lambda4. *)
+  - eauto with coc.
+  (* Case: typing_application. *)
+  - admit.
+  (* Case: typing_conv. *)
+  - admit.
+Admitted.
+
+(******************************************************************************)
+
 Inductive context_step: context -> context -> Prop :=
   | context_step_car:
     forall g t u,
@@ -1711,28 +1824,25 @@ Inductive context_step: context -> context -> Prop :=
     context_step g h -> context_step (t :: g) (t :: h).
 
 Hint Constructors context_step: coc.
+Print item_lift.
 
 Lemma item_lift_preserved_under_context_step:
-  forall t g n,
-  item_lift t g n ->
+  (*
+   forall n t e,
+   item_lift t e n ->
+   forall f,
+   red1_in_env e f ->
+   item_lift t f n \/
+   (forall g, trunc _ (S n) e g -> trunc _ (S n) f g) /\
+   ex2 (fun u => red1 t u) (fun u => item_lift u f n).
+  *)
+  forall e g n,
+  item_lift e g n ->
   forall h,
-  context_step g h -> valid_context h ->
-  item_lift t h n \/ exists2 u, [t => u] & item_lift u h n.
+  context_step g h ->
+  item_lift e h n \/ exists2 f, [e => f] & item_lift f h n.
 Proof.
-  induction n; intros.
-  (* Case: zero. *)
-  - destruct H.
-    inversion H2.
-    destruct H3.
-    inversion H0; destruct H4.
-    + right.
-      exists (lift 1 0 u).
-      * rewrite H; eauto with coc.
-      * exists u; eauto with coc.
-    + left.
-      exists x; eauto with coc.
-  (* Case: succ. *)
-  - admit.
+  admit.
 Admitted.
 
 Lemma typing_preserved_under_context_step:
@@ -1784,8 +1894,8 @@ Admitted.
 
 Hint Resolve typing_preserved_under_context_step: coc.
 
-(*
 
+(*
 Lemma inversion_typing_lambda_body:
   forall g t1 e x,
   [g |- \t1, e: x] ->
@@ -1812,7 +1922,7 @@ Proof.
   intros until 1.
   dependent induction H; intros.
   (* Case: typing_prop. *)
-  - inversion H0; auto.
+  - inversion H0.
   (* Case: typing_bound. *)
   - inversion H1.
   (* Case: typing_pi1. *)
@@ -1833,33 +1943,38 @@ Proof.
     + apply typing_pi4; eauto with coc.
   (* Case: typing_lambda1. *)
   - inversion_clear H2.
-    + apply typing_conv with (pi t2 u).
-      apply typing_lambda1; eauto with coc.
-      eauto with coc.
+    + apply typing_conv with (pi t2 u) type.
+      * apply typing_lambda1; eauto with coc.
+      * eauto with coc.
+      * eauto with coc.
     + apply typing_lambda1; auto.
   (* Case: typing_lambda2. *)
   - inversion_clear H2.
-    + apply typing_conv with (pi t2 u).
-      apply typing_lambda2; eauto with coc.
-      eauto with coc.
+    + apply typing_conv with (pi t2 u) type.
+      * apply typing_lambda2; eauto with coc.
+      * eauto with coc.
+      * eauto with coc.
     + apply typing_lambda2; auto.
   (* Case: typing_lambda3. *)
   - inversion_clear H2.
-    + apply typing_conv with (pi t2 u).
-      apply typing_lambda3; eauto with coc.
-      eauto with coc.
+    + apply typing_conv with (pi t2 u) prop.
+      * apply typing_lambda3; eauto with coc.
+      * eauto with coc.
+      * eauto with coc.
     + apply typing_lambda3; auto.
   (* Case: typing_lambda4. *)
   - inversion_clear H2.
-    + apply typing_conv with (pi t2 u).
-      apply typing_lambda4; eauto with coc.
-      eauto with coc.
+    + apply typing_conv with (pi t2 u) prop.
+      * apply typing_lambda4; eauto with coc.
+      * eauto with coc.
+      * eauto with coc.
     + apply typing_lambda4; auto.
   (* Case: typing_application. *)
   - inversion H1.
+
+(*inversion H1.
     + destruct H2, H3, (eq_sym H4); clear H4.
-      edestruct inversion_typing_lambda.
-      exact H.
+      edestruct inversion_typing_lambda; eauto.
       destruct H3.
       destruct H4.
       edestruct inversion_conv_pi.
@@ -1870,7 +1985,12 @@ Proof.
       eauto with coc.
       eauto with coc.
     + apply typing_application with t; auto.
-    + apply typing_conv with (subst x2 0 b); eauto with coc.
+    + destruct H2, H3, H4.
+      eapply typing_conv.
+      * apply typing_application with t; eauto with coc.
+      * eauto with coc.
+      * *)
+
   (* Case: typing_conv. *)
   - eauto with coc.
 Qed.
@@ -1888,50 +2008,5 @@ Proof.
 Qed.
 
 Hint Resolve subject_reduction: coc.
-
-(******************************************************************************)
-
-Lemma typing_case:
-  forall g e t,
-  [g |- e: t] -> t = type \/ [g |- t: prop] \/ [g |- t: type].
-Proof.
-  intros until 1.
-  dependent induction H.
-  (* Case: typing_prop. *)
-  - auto.
-  (* Case: typing_bound. *)
-  - right.
-    apply well_founded_lift_has_sort with n; auto.
-  (* Case: typing_pi1. *)
-  - auto.
-  (* Case: typing_pi2. *)
-  - auto.
-  (* Case: typing_pi3. *)
-  - eauto with coc.
-  (* Case: typing_pi4. *)
-  - eauto with coc.
-  (* Case: typing_lambda1. *)
-  - eauto with coc.
-  (* Case: typing_lambda2. *)
-  - eauto with coc.
-  (* Case: typing_lambda3. *)
-  - eauto with coc.
-  (* Case: typing_lambda4. *)
-  - eauto with coc.
-  (* Case: typing_application. *)
-  - clear IHtyping2.
-    destruct IHtyping1 as [ ? | [ ? | ? ] ].
-    + inversion H1.
-    + right; left.
-      replace prop with (subst x 0 prop); auto.
-      eapply typing_subst; eauto.
-      edestruct inversion_typing_pi; eauto.
-    + right; right.
-      replace type with (subst x 0 type); auto.
-      eapply typing_subst; eauto.
-      edestruct inversion_typing_pi; eauto.
-  (* Case: typing_conv. *)
-  - admit.
-Admitted.
 
 *)
