@@ -1658,8 +1658,8 @@ Proof.
   (* Case: typing_bound. *)
   - eapply typing_conv.
     + apply IHtyping1; auto.
-    + admit.
-    +  apply IHtyping2; auto.
+    + auto with coc.
+    + apply IHtyping2; auto.
 Admitted.
 
 Theorem typing_subst:
