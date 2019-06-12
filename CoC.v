@@ -182,6 +182,8 @@ Proof.
   - intros; simpl; f_equal; auto.
 Qed.
 
+Hint Resolve lift_i_lift_j_equals_lift_i_plus_j: coc.
+
 Lemma lift_lift_simplification:
   forall e i j k l,
   k <= l + j -> l <= k -> lift i k (lift j l e) = lift (i + j) l e.
@@ -1586,7 +1588,7 @@ Proof.
   - eapply typing_conv; eauto with coc.
 Qed.
 
-Theorem typing_lift:
+Theorem weakening:
   forall g e t,
   [g |- e: t] ->
   forall x,
@@ -1594,6 +1596,35 @@ Theorem typing_lift:
 Proof.
   intros.
   eapply typing_weak_lift; eauto with coc.
+Qed.
+
+Inductive truncate: nat -> context -> context -> Prop :=
+  | truncate_zero:
+    forall g,
+    truncate 0 g g
+  | truncate_succ:
+    forall n g h,
+    truncate n g h ->
+    forall x,
+    truncate (S n) (x :: g) h.
+
+Hint Constructors truncate: coc.
+
+Corollary typing_lift:
+  forall g e t,
+  [g |- e: t] ->
+  forall n h,
+  truncate n h g -> valid_context h -> [h |- lift n 0 e: lift n 0 t].
+Proof.
+  induction n; intros.
+  - do 2 rewrite lift_zero_e_equals_e.
+    inversion H0; auto.
+  - replace (S n) with (1 + n); auto.
+    replace (lift (1 + n) 0 e) with (lift 1 0 (lift n 0 e)); auto with coc.
+    replace (lift (1 + n) 0 t) with (lift 1 0 (lift n 0 t)); auto with coc.
+    inversion H0; destruct H2, H4, H5.
+    apply weakening; auto with coc.
+    inversion H1; eauto with coc.
 Qed.
 
 Hint Resolve typing_lift: coc.
@@ -1663,7 +1694,7 @@ Lemma typing_weak_subst:
   [e |- u: U] ->
   forall f n,
   substitute d t n e f ->
-  valid_context f -> [f |- subst d n u: subst d n U].
+  valid_context f -> truncate n f g -> [f |- subst d n u: subst d n U].
 Proof.
   induction 2; intros.
   (* Case: typing_prop. *)
@@ -1682,7 +1713,7 @@ Proof.
       destruct H1; rewrite H1; clear H1.
       rewrite subst_lift_simplification; auto with arith.
       replace x with t.
-      * admit.
+      * apply typing_lift with g; auto.
       * eapply item_unique; eauto.
         eapply nth_sub_eq; eauto.
     + apply typing_bound; auto.
@@ -1733,7 +1764,7 @@ Proof.
     + apply IHtyping1; auto.
     + auto with coc.
     + apply IHtyping2; auto.
-Admitted.
+Qed.
 
 Theorem typing_subst:
   forall g e1 t1 t2,
