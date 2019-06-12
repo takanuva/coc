@@ -1295,22 +1295,33 @@ Inductive item (e: pseudoterm): context -> nat -> Prop :=
 
 Hint Constructors item: coc.
 
+Lemma item_unique:
+  forall a g n,
+  item a g n ->
+  forall b,
+  item b g n -> a = b.
+Proof.
+  induction 1; intros.
+  - inversion_clear H.
+    reflexivity.
+  - apply IHitem.
+    inversion_clear H0.
+    assumption.
+Qed.
+
 Definition item_lift (e: pseudoterm) (g: context) (n: nat): Prop :=
   exists2 x, e = lift (S n) 0 x & item x g n.
 
 Lemma item_lift_unique:
-  forall a b g n,
-  item_lift a g n -> item_lift b g n -> a = b.
+  forall a g n,
+  item_lift a g n ->
+  forall b,
+  item_lift b g n -> a = b.
 Proof.
-  intros.
-  destruct H, H0.
-  rewrite H, H0; clear H H0.
-  generalize n.
-  induction H1.
-  - inversion H2.
-    reflexivity.
-  - inversion_clear H2.
-    eauto.
+  induction 1; intros.
+  inversion_clear H1.
+  rewrite H, H2; f_equal.
+  eapply item_unique; eauto.
 Qed.
 
 Reserved Notation "[ g |- e : t ]"
@@ -1587,8 +1598,6 @@ Qed.
 
 Hint Resolve typing_lift: coc.
 
-(******************************************************************************)
-
 Inductive substitute x y: nat -> context -> context -> Prop :=
   | substitute_car:
     forall cdr,
@@ -1599,6 +1608,53 @@ Inductive substitute x y: nat -> context -> context -> Prop :=
     substitute x y (S n) (car :: cdr) (subst x n car :: res).
 
 Hint Constructors substitute: coc.
+
+(******************************************************************************)
+(******************************************************************************)
+(******************************************************************************)
+
+(******************************************************************************)
+(******************************************************************************)
+(******************************************************************************)
+
+(* I'm still not sure what this lemma proves. *)
+Lemma nth_sub_sup:
+  forall t T n e f,
+  substitute t T n e f ->
+  forall m,
+  n <= m ->
+  forall u,
+  item u e (S m) -> item u f m.
+Proof.
+  induction 1; intros.
+  + inversion_clear H0; auto.
+  + destruct m.
+    inversion_clear H0.
+    inversion_clear H1.
+    auto with coc arith.
+Qed.
+
+(* I'm still not sure what this lemma proves. *)
+Lemma nth_sub_eq:
+  forall t T n e f,
+  substitute t T n e f -> item T e n.
+Proof.
+  induction 1; auto with coc.
+Qed.
+
+(* I'm still not sure what this lemma proves. *)
+Lemma nth_sub_inf:
+  forall t T n e f,
+  substitute t T n e f ->
+  forall m,
+  n > m ->
+  forall u,
+  item_lift u e m -> item_lift (subst t n u) f m.
+Proof.
+  induction 1; intros.
+  admit.
+  admit.
+Admitted.
 
 Lemma typing_weak_subst:
   forall g d t,
@@ -1613,7 +1669,24 @@ Proof.
   (* Case: typing_prop. *)
   - auto with coc.
   (* Case: typing_bound. *)
-  - admit.
+  - simpl; rename n0 into m.
+    destruct (lt_eq_lt_dec m n) as [ [ ? | ? ] | ? ].
+    + destruct n.
+      * inversion l.
+      * simpl; destruct H1; rewrite H1; clear H1.
+        rewrite subst_lift_simplification; auto with arith.
+        apply typing_bound; auto.
+        exists x; auto.
+        eapply nth_sub_sup; eauto with arith.
+    + destruct e.
+      destruct H1; rewrite H1; clear H1.
+      rewrite subst_lift_simplification; auto with arith.
+      replace x with t.
+      * admit.
+      * eapply item_unique; eauto.
+        eapply nth_sub_eq; eauto.
+    + apply typing_bound; auto.
+      eapply nth_sub_inf; eauto with arith.
   (* Case: typing_pi1. *)
   - simpl; apply typing_pi1.
     + apply IHtyping1; auto.
