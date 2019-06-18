@@ -467,6 +467,8 @@ Proof.
     + rewrite IHa2; auto.
 Qed.
 
+Hint Resolve lift_and_subst_commute: coc.
+
 Lemma subst_addition_distributes_over_itself:
   forall a b c p k,
   subst c (p + k) (subst b p a) = subst (subst c k b) p (subst c (S (p + k)) a).
@@ -1703,9 +1705,26 @@ Lemma nth_sub_inf:
   item_lift u e m -> item_lift (subst t n u) f m.
 Proof.
   induction 1; intros.
-  admit.
-  admit.
-Admitted.
+  - inversion H.
+  - destruct m.
+    + inversion H1; rewrite H2.
+      exists (subst t n x).
+      * rewrite lift_and_subst_commute; auto with arith.
+      * inversion_clear H3; auto with coc.
+    + inversion H1; rewrite H2.
+      destruct IHsubstitute with m (lift (S m) 0 x).
+      * auto with arith.
+      * inversion_clear H3.
+        exists x; auto.
+      * rename x0 into y.
+        exists y.
+        replace (lift (S (S m)) 0 y) with (lift 1 0 (lift (S m) 0 y)).
+        elim H4.
+        rewrite lift_and_subst_commute; auto with arith.
+        rewrite lift_i_lift_j_equals_lift_i_plus_j; auto.
+        replace (S (S m)) with (1 + S m); eauto with coc.
+        inversion_clear H3; auto with coc.
+Qed.
 
 Lemma typing_weak_subst:
   forall g d t,
