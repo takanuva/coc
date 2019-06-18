@@ -1812,7 +1812,7 @@ Proof.
     apply inversion_typing_prop with g; auto.
   (* Case: typing_bound. *)
   - edestruct inversion_typing_bound; eauto.
-    destruct item_lift_unique with t x g n; auto.
+    destruct item_lift_unique with t g n x; auto.
     apply conv_symm; auto.
   (* Case: typing_pi1. *)
   - destruct inversion_typing_pi with g t b t2; auto.
@@ -1953,7 +1953,6 @@ Inductive context_step: context -> context -> Prop :=
     context_step g h -> context_step (t :: g) (t :: h).
 
 Hint Constructors context_step: coc.
-Print item_lift.
 
 Lemma item_lift_preserved_under_context_step:
   (*
