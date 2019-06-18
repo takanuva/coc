@@ -153,7 +153,9 @@ Lemma lift_bound_lt:
 Proof.
   intros; simpl.
   destruct (le_gt_dec k n).
+  (* Case: k <= n. *)
   - absurd (k <= n); auto with arith.
+  (* Case: k > n. *)
   - reflexivity.
 Qed.
 
@@ -418,7 +420,7 @@ Proof.
     + rewrite IHa2; auto.
 Qed.
 
-Lemma commut_lift_subst_rec:
+Lemma lift_and_subst_commute:
   forall a b i p k,
   k <= p ->
   lift i k (subst b p a) = subst b (i + p) (lift i k a).
@@ -430,7 +432,25 @@ Proof.
   - reflexivity.
   (* Case: bound. *)
   - simpl.
-    admit.
+    destruct (lt_eq_lt_dec p n) as [ [ ? | ? ] | ? ]; simpl.
+    + destruct (le_gt_dec k n).
+      * rewrite subst_bound_gt; eauto with arith.
+        destruct (le_gt_dec k (pred n)).
+        inversion l.
+        replace (i + S p) with (S (i + p)); auto.
+        replace (i + S m) with (S (i + m)); auto.
+        (* We need this destruct to convince Coq. *)
+        absurd (k < n); destruct n; info_eauto with arith.
+      * absurd (n > p); eauto with arith.
+    + destruct (le_gt_dec k n).
+      * rewrite subst_bound_eq; auto.
+        rewrite lift_lift_simplification; auto with arith.
+        congruence.
+      * destruct e.
+        absurd (k > p); auto with arith.
+    + destruct (le_gt_dec k n).
+      * rewrite subst_bound_lt; auto with arith.
+      * rewrite subst_bound_lt; eauto with arith.
   (* Case: pi. *)
   - simpl; f_equal.
     + rewrite IHa1; auto.
@@ -445,7 +465,7 @@ Proof.
   - simpl; f_equal.
     + rewrite IHa1; auto.
     + rewrite IHa2; auto.
-Admitted.
+Qed.
 
 Lemma subst_addition_distributes_over_itself:
   forall a b c p k,
@@ -473,7 +493,7 @@ Proof.
     + destruct e.
       rewrite subst_bound_lt; auto with arith.
       rewrite subst_bound_eq; auto.
-      rewrite commut_lift_subst_rec; auto with arith.
+      rewrite lift_and_subst_commute; auto with arith.
     + rewrite subst_bound_lt; auto with arith.
       rewrite subst_bound_lt; auto with arith.
       rewrite subst_bound_lt; auto with arith.
@@ -1766,7 +1786,7 @@ Proof.
     + apply IHtyping2; auto.
 Qed.
 
-Theorem typing_subst:
+Theorem substitution:
   forall g e1 t1 t2,
   [t2 :: g |- e1: t1] ->
   forall x,
@@ -1776,7 +1796,7 @@ Proof.
   eapply typing_weak_subst; eauto with coc.
 Qed.
 
-Hint Resolve typing_subst: coc.
+Hint Resolve substitution: coc.
 
 (******************************************************************************)
 
