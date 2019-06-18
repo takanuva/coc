@@ -440,7 +440,7 @@ Proof.
         replace (i + S p) with (S (i + p)); auto.
         replace (i + S m) with (S (i + m)); auto.
         (* We need this destruct to convince Coq. *)
-        absurd (k < n); destruct n; info_eauto with arith.
+        absurd (k < n); destruct n; eauto with arith.
       * absurd (n > p); eauto with arith.
     + destruct (le_gt_dec k n).
       * rewrite subst_bound_eq; auto.
