@@ -186,6 +186,17 @@ Qed.
 
 Hint Resolve lift_i_lift_j_equals_lift_i_plus_j: coc.
 
+Lemma lift_succ_n_equals_lift_1_lift_n:
+  forall n k e,
+  lift (S n) k e = lift 1 k (lift n k e).
+Proof.
+  intros.
+  replace (S n) with (1 + n); auto.
+  rewrite lift_i_lift_j_equals_lift_i_plus_j; auto.
+Qed.
+
+Hint Resolve lift_succ_n_equals_lift_1_lift_n: coc.
+
 Lemma lift_lift_simplification:
   forall e i j k l,
   k <= l + j -> l <= k -> lift i k (lift j l e) = lift (i + j) l e.
@@ -1513,6 +1524,8 @@ Proof.
     eexists; eauto with coc.
 Qed.
 
+(******************************************************************************)
+
 Inductive insert x: nat -> context -> context -> Prop :=
   | insert_car:
     forall cdr, insert x 0 cdr (x :: cdr)
@@ -1889,15 +1902,6 @@ Qed.
 
 Hint Resolve typing_unique_up_to_conv: coc.
 
-Lemma lift_succ_n_equals_lift_1_lift_n:
-  forall n k e,
-  lift (S n) k e = lift 1 k (lift n k e).
-Proof.
-  intros.
-  replace (S n) with (1 + n); auto.
-  rewrite lift_i_lift_j_equals_lift_i_plus_j; auto.
-Qed.
-
 Lemma well_founded_lift_has_sort:
   forall n g t,
   valid_context g -> item_lift t g n -> [g |- t: prop] \/ [g |- t: type].
@@ -1928,6 +1932,30 @@ Qed.
 
 (******************************************************************************)
 
+Lemma inversion_typing_beta:
+  forall g t b s,
+  [g |- \/t, b: s] ->
+  forall x,
+  [g |- x: t] -> [g |- b[x/]: s].
+Proof.
+  intros until 1.
+  dependent induction H; intros.
+  (* Case: typing_pi1. *)
+  - replace type with (subst x 0 type); auto.
+    eauto with coc.
+  (* Case: typing_pi2. *)
+  - replace type with (subst x 0 type); auto.
+    eauto with coc.
+  (* Case: typing_pi3. *)
+  - replace prop with (subst x 0 prop); auto.
+    eauto with coc.
+  (* Case: typing_pi4. *)
+  - replace prop with (subst x 0 prop); auto.
+    eauto with coc.
+  (* Case: typing_conv. *)
+  - eauto with coc.
+Qed.
+
 Lemma typing_case:
   forall g e t,
   [g |- e: t] -> t = type \/ [g |- t: prop] \/ [g |- t: type].
@@ -1956,7 +1984,26 @@ Proof.
   (* Case: typing_lambda4. *)
   - eauto with coc.
   (* Case: typing_application. *)
-  - admit.
+  - destruct IHtyping1 as [ ? | [ ? | ? ] ].
+    + inversion H1.
+    + destruct IHtyping2 as [ ? | [ ? | ? ] ].
+      * destruct (eq_sym H2); clear H2.
+        edestruct inversion_typing_pi; eauto.
+        absurd (typing g type x0); auto.
+        apply inversion_typing_type.
+      * right; left.
+        apply inversion_typing_beta with t; auto.
+      * right; left.
+        apply inversion_typing_beta with t; auto.
+    + destruct IHtyping2 as [ ? | [ ? | ? ] ].
+      * destruct (eq_sym H2); clear H2.
+        edestruct inversion_typing_pi; eauto.
+        absurd (typing g type x0); auto.
+        apply inversion_typing_type.
+      * right; right.
+        apply inversion_typing_beta with t; auto.
+      * right; right.
+        apply inversion_typing_beta with t; auto.
   (* Case: typing_conv. *)
   - admit.
 Admitted.
