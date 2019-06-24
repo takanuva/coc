@@ -1173,6 +1173,23 @@ Qed.
 
 (******************************************************************************)
 
+Lemma inversion_star_type:
+  forall e,
+  [type =>* e] -> type = e.
+Proof.
+  intros until 1.
+  dependent induction H.
+  (* Case: star_step. *)
+  - inversion H.
+  (* Case: star_refl. *)
+  - reflexivity.
+  (* Case: star_tran. *)
+  - apply IHclos_refl_trans2.
+    symmetry.
+    apply IHclos_refl_trans1.
+    reflexivity.
+Qed.
+
 Lemma inversion_star_pi:
   forall t b x,
   [\/t, b =>* x] ->
