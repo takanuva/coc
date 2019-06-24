@@ -2020,24 +2020,76 @@ Inductive context_step: context -> context -> Prop :=
 
 Hint Constructors context_step: coc.
 
+(* This lemma is so unelegant... please rewrite this later. *)
 Lemma item_lift_preserved_under_context_step:
-  (*
-   forall n t e,
-   item_lift t e n ->
-   forall f,
-   red1_in_env e f ->
-   item_lift t f n \/
-   (forall g, trunc _ (S n) e g -> trunc _ (S n) f g) /\
-   ex2 (fun u => red1 t u) (fun u => item_lift u f n).
-  *)
-  forall e g n,
-  item_lift e g n ->
+  forall n t g,
+  item_lift t g n ->
   forall h,
   context_step g h ->
-  item_lift e h n \/ exists2 f, [e => f] & item_lift f h n.
+  item_lift t h n \/
+    exists2 u, [t => u] &
+      item_lift u h n /\ (forall i, truncate (S n) g i -> truncate (S n) h i).
 Proof.
-  admit.
-Admitted.
+  induction n; intros.
+  - destruct H; rewrite H; clear H.
+    inversion H1; destruct H.
+    inversion_clear H0.
+    + right.
+      exists (lift 1 0 u); auto with coc.
+      split.
+      * exists u; eauto with coc.
+      * intros.
+        inversion_clear H0.
+        auto with coc.
+    + left.
+      exists x; eauto with coc.
+  - destruct H.
+    inversion H1.
+    destruct H2, H3.
+    inversion_clear H0.
+    + left.
+      exists x; eauto with coc.
+    + edestruct IHn.
+      * exists x; eauto.
+      * eassumption.
+      * left.
+        destruct H0.
+        exists x0; auto.
+        rewrite H; auto.
+        rewrite lift_succ_n_equals_lift_1_lift_n.
+        rewrite H0; auto with coc.
+        constructor; exact H3.
+      * right.
+        destruct H0.
+        destruct H3.
+        rewrite H.
+        eexists.
+        rewrite lift_succ_n_equals_lift_1_lift_n.
+        apply step_lift; eassumption.
+        split.
+        destruct H3.
+        rewrite H3.
+        exists x1; eauto with coc.
+        intros.
+        inversion H6; eauto with coc.
+Qed.
+
+(*
+Lemma truncate_item:
+  forall n t g,
+  item t g n -> exists h, truncate (S n) g h.
+Proof.
+  induction n; intros.
+  (* Case: zero. *)
+  - inversion_clear H.
+    eauto with coc.
+  (* Case: succ. *)
+  - inversion_clear H.
+    edestruct IHn; eauto.
+    exists x.
+    auto with coc.
+Qed.
+*)
 
 Lemma typing_preserved_under_context_step:
   forall g e t,
@@ -2050,17 +2102,9 @@ Proof.
   (* Case: typing_prop. *)
   - auto with coc.
   (* Case: typing_bound. *)
-  - edestruct item_lift_preserved_under_context_step.
-    + exact H0.
-    + exact H1.
-    + exact H2.
-    + auto with coc.
-    + destruct H3.
-      destruct well_founded_lift_has_sort with n h x; auto.
-      * apply typing_conv with x prop; eauto with coc.
-        admit.
-      * apply typing_conv with x type; eauto with coc.
-        admit.
+  - edestruct item_lift_preserved_under_context_step; eauto.
+    + apply typing_bound; auto.
+    + admit.
   (* Case: typing_pi1. *)
   - apply typing_pi1; eauto with coc.
   (* Case: typing_pi2. *)
