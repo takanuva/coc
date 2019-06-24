@@ -2232,13 +2232,12 @@ Qed.
 Hint Resolve typing_preserved_under_step: coc.
 
 Theorem subject_reduction:
-  forall g e1 t,
-  [g |- e1: t] ->
-  forall e2,
-  [e1 =>* e2] -> [g |- e2: t].
+  forall e1 e2,
+  [e1 =>* e2] ->
+  forall g t,
+  [g |- e1: t] -> [g |- e2: t].
 Proof.
-  intros until 2.
-  dependent induction H0; eauto with coc.
+  induction 1; eauto with coc.
 Qed.
 
 Hint Resolve subject_reduction: coc.
