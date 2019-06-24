@@ -1956,6 +1956,8 @@ Proof.
   - eauto with coc.
 Qed.
 
+Hint Resolve inversion_typing_beta: coc.
+
 Lemma typing_case:
   forall g e t,
   [g |- e: t] -> t = type \/ [g |- t: prop] \/ [g |- t: type].
@@ -2132,24 +2134,23 @@ Admitted.
 
 Hint Resolve typing_preserved_under_context_step: coc.
 
-
-(*
-Lemma inversion_typing_lambda_body:
-  forall g t1 e x,
-  [g |- \t1, e: x] ->
-  forall b,
-  [x <=> \/t1, b] -> [t1 :: g |- e: b].
+Lemma inversion_typing_typed_as_pi:
+  forall g f t b,
+  [g |- f: \/t, b] ->
+  exists s, [g |- \/t, b: s].
 Proof.
   intros until 1.
   dependent induction H; intros.
-  - edestruct inversion_conv_pi; eauto with coc.
-  - edestruct inversion_conv_pi; eauto with coc.
-  - edestruct inversion_conv_pi; eauto with coc.
-  - edestruct inversion_conv_pi; eauto with coc.
-  - eauto with coc.
+  - edestruct well_founded_lift_has_sort; eauto.
+  - exists type; auto with coc.
+  - exists type; auto with coc.
+  - exists prop; auto with coc.
+  - exists prop; auto with coc.
+  - destruct x.
+    destruct IHtyping1 with t0 b0; auto.
+    eauto with coc.
+  - eauto.
 Qed.
-
-Hint Resolve inversion_typing_lambda_body: coc.
 
 Lemma typing_preserved_under_step:
   forall g e1 t,
@@ -2208,27 +2209,22 @@ Proof.
       * eauto with coc.
     + apply typing_lambda4; auto.
   (* Case: typing_application. *)
-  - inversion H1.
-
-(*inversion H1.
-    + destruct H2, H3, (eq_sym H4); clear H4.
+  - edestruct inversion_typing_typed_as_pi; eauto.
+    rename x0 into s.
+    inversion H1.
+    + destruct H3, H4.
+      clear x0 H5.
       edestruct inversion_typing_lambda; eauto.
-      destruct H3.
       destruct H4.
-      edestruct inversion_conv_pi.
-      exact H5.
-      apply typing_subst with t0; auto.
-      eapply inversion_typing_lambda_body.
-      exact H.
-      eauto with coc.
-      eauto with coc.
-    + apply typing_application with t; auto.
-    + destruct H2, H3, H4.
+      destruct H5.
+      edestruct inversion_conv_pi; eauto.
       eapply typing_conv.
-      * apply typing_application with t; eauto with coc.
+      * eapply substitution; eauto.
+        eapply typing_conv; eauto.
       * eauto with coc.
-      * *)
-
+      * eauto with coc.
+    + apply typing_application with t; auto.
+    + eapply typing_conv; eauto with coc.
   (* Case: typing_conv. *)
   - eauto with coc.
 Qed.
@@ -2246,5 +2242,3 @@ Proof.
 Qed.
 
 Hint Resolve subject_reduction: coc.
-
-*)
