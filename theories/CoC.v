@@ -1302,22 +1302,32 @@ Qed.
 
 Lemma inversion_star_normal:
   forall a b,
-  [a =>* b] -> normal a ->
-  forall P: Prop,
-  (a = b -> P) -> P.
+  [a =>* b] -> normal a -> a = b.
 Proof.
-  simple induction 1; intros.
+  induction 1; intros.
   (* Case: step. *)
   - absurd (step x y); auto.
   (* Case: refl. *)
-  - auto.
+  - reflexivity.
   (* Case: tran. *)
-  - apply H1.
-    assumption.
-    intro.
-    destruct H6.
-    apply H3; auto.
+  - destruct IHclos_refl_trans1; auto.
 Qed.
+
+Lemma type_is_normal:
+  normal type.
+Proof.
+  inversion 1.
+Qed.
+
+Hint Resolve type_is_normal: coc.
+
+Lemma prop_is_normal:
+  normal prop.
+Proof.
+  inversion 1.
+Qed.
+
+Hint Resolve prop_is_normal: coc.
 
 Lemma normal_form_is_unique:
   forall a b,
@@ -1326,10 +1336,8 @@ Proof.
   intros.
   destruct step_is_church_rosser with a b.
   - assumption.
-  - apply inversion_star_normal with a x;
-      apply inversion_star_normal with b x;
-      auto.
-    congruence.
+  - destruct inversion_star_normal with a x; auto.
+    destruct inversion_star_normal with b a; auto.
 Qed.
 
 (******************************************************************************)
@@ -1975,58 +1983,6 @@ Qed.
 
 Hint Resolve inversion_typing_beta: coc.
 
-Lemma typing_case:
-  forall g e t,
-  [g |- e: t] -> t = type \/ [g |- t: prop] \/ [g |- t: type].
-Proof.
-  intros until 1.
-  dependent induction H.
-  (* Case: typing_prop. *)
-  - auto.
-  (* Case: typing_bound. *)
-  - right.
-    apply well_founded_lift_has_sort with n; auto.
-  (* Case: typing_pi1. *)
-  - auto.
-  (* Case: typing_pi2. *)
-  - auto.
-  (* Case: typing_pi3. *)
-  - eauto with coc.
-  (* Case: typing_pi4. *)
-  - eauto with coc.
-  (* Case: typing_lambda1. *)
-  - eauto with coc.
-  (* Case: typing_lambda2. *)
-  - eauto with coc.
-  (* Case: typing_lambda3. *)
-  - eauto with coc.
-  (* Case: typing_lambda4. *)
-  - eauto with coc.
-  (* Case: typing_application. *)
-  - destruct IHtyping1 as [ ? | [ ? | ? ] ].
-    + inversion H1.
-    + destruct IHtyping2 as [ ? | [ ? | ? ] ].
-      * destruct (eq_sym H2); clear H2.
-        edestruct inversion_typing_pi; eauto.
-        absurd (typing g type x0); auto.
-        apply inversion_typing_type.
-      * right; left.
-        apply inversion_typing_beta with t; auto.
-      * right; left.
-        apply inversion_typing_beta with t; auto.
-    + destruct IHtyping2 as [ ? | [ ? | ? ] ].
-      * destruct (eq_sym H2); clear H2.
-        edestruct inversion_typing_pi; eauto.
-        absurd (typing g type x0); auto.
-        apply inversion_typing_type.
-      * right; right.
-        apply inversion_typing_beta with t; auto.
-      * right; right.
-        apply inversion_typing_beta with t; auto.
-  (* Case: typing_conv. *)
-  - admit.
-Admitted.
-
 (******************************************************************************)
 
 Inductive context_step: context -> context -> Prop :=
@@ -2258,3 +2214,74 @@ Proof.
 Qed.
 
 Hint Resolve subject_reduction: coc.
+
+Corollary conv_terms_imply_conv_types:
+  forall g e1 t1 e2 t2,
+  [g |- e1: t1] -> [g |- e2: t2] -> [e1 <=> e2] -> [t1 <=> t2].
+Proof.
+  intros.
+  destruct step_is_church_rosser with e1 e2; auto.
+  fold star in * |-.
+  apply typing_unique_up_to_conv with g x.
+  - apply subject_reduction with e1; auto.
+  - apply subject_reduction with e2; auto.
+Qed.
+
+(*Lemma typing_case:
+  forall g e t,
+  [g |- e: t] -> t = type \/ [g |- t: prop] \/ [g |- t: type].
+Proof.
+  induction 1.
+  (* Case: typing_prop. *)
+  - auto.
+  (* Case: typing_bound. *)
+  - right.
+    apply well_founded_lift_has_sort with n; auto.
+  (* Case: typing_pi1. *)
+  - auto.
+  (* Case: typing_pi2. *)
+  - auto.
+  (* Case: typing_pi3. *)
+  - eauto with coc.
+  (* Case: typing_pi4. *)
+  - eauto with coc.
+  (* Case: typing_lambda1. *)
+  - eauto with coc.
+  (* Case: typing_lambda2. *)
+  - eauto with coc.
+  (* Case: typing_lambda3. *)
+  - eauto with coc.
+  (* Case: typing_lambda4. *)
+  - eauto with coc.
+  (* Case: typing_application. *)
+  - destruct IHtyping1 as [ ? | [ ? | ? ] ].
+    + inversion H1.
+    + destruct IHtyping2 as [ ? | [ ? | ? ] ].
+      * destruct (eq_sym H2); clear H2.
+        edestruct inversion_typing_pi; eauto.
+        absurd (typing g type x0); auto.
+        apply inversion_typing_type.
+      * right; left.
+        apply inversion_typing_beta with t; auto.
+      * right; left.
+        apply inversion_typing_beta with t; auto.
+    + destruct IHtyping2 as [ ? | [ ? | ? ] ].
+      * destruct (eq_sym H2); clear H2.
+        edestruct inversion_typing_pi; eauto.
+        absurd (typing g type x0); auto.
+        apply inversion_typing_type.
+      * right; right.
+        apply inversion_typing_beta with t; auto.
+      * right; right.
+        apply inversion_typing_beta with t; auto.
+  (* Case: typing_conv. *)
+  - destruct IHtyping1 as [ ? | [ ? | ? ] ].
+    + absurd (typing g type s).
+      * apply inversion_typing_type.
+      * destruct (eq_sym H2); clear H2.
+        destruct step_is_church_rosser with type t2; auto.
+        destruct inversion_star_normal with type x; auto with coc.
+        eapply subject_reduction; eauto.
+    + admit.
+    + admit.
+Admitted.*)
