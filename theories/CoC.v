@@ -2242,9 +2242,11 @@ Proof.
   apply subject_reduction with t; eauto.
 Qed.
 
-Lemma typing_preserved_under_star:
-  forall g e t1 t2,
-  [g |- e: t1] -> [t1 =>* t2] -> [g |- e: t2].
+Lemma typing_preserved_under_type_star:
+  forall g e t1,
+  [g |- e: t1] ->
+  forall t2,
+  [t1 =>* t2] -> [g |- e: t2].
 Proof.
   induction 1; intros.
   (* Case: typing_prop. *)
@@ -2277,11 +2279,11 @@ Proof.
   - eapply typing_conv; eauto with coc.
 Qed.
 
-Hint Resolve typing_preserved_under_star: coc.
+Hint Resolve typing_preserved_under_type_star: coc.
 
 (******************************************************************************)
 
-(*Lemma typing_case:
+Lemma typing_case:
   forall g e t,
   [g |- e: t] -> t = type \/ [g |- t: prop] \/ [g |- t: type].
 Proof.
@@ -2292,9 +2294,9 @@ Proof.
   - right.
     apply well_founded_lift_has_sort with n; auto.
   (* Case: typing_pi1. *)
-  - auto.
+  - left; reflexivity.
   (* Case: typing_pi2. *)
-  - auto.
+  - left; reflexivity.
   (* Case: typing_pi3. *)
   - eauto with coc.
   (* Case: typing_pi4. *)
@@ -2330,15 +2332,22 @@ Proof.
         apply inversion_typing_beta with t; auto.
   (* Case: typing_conv. *)
   - destruct IHtyping1 as [ ? | [ ? | ? ] ].
-    + absurd (typing g type s).
-      * apply inversion_typing_type.
-      * destruct (eq_sym H2); clear H2.
-        destruct step_is_church_rosser with type t2; auto.
-        destruct inversion_star_normal with type x; auto with coc.
-        eapply subject_reduction; eauto.
-    + admit.
-    + admit.
-Admitted.*)
+    + destruct (eq_sym H2); clear H2.
+      absurd (typing g t2 s); auto.
+      apply inversion_typing_conv_type; auto.
+    + right; left.
+      cut (conv prop s); intros.
+      * destruct step_is_church_rosser with prop s; eauto.
+        destruct inversion_star_normal with prop x; eauto with coc.
+      * eapply conv_terms_imply_conv_types; eauto.
+    + right; right.
+      cut (conv type s); intros.
+      * destruct step_is_church_rosser with type s; eauto.
+        destruct inversion_star_normal with type x; eauto with coc.
+      * eapply conv_terms_imply_conv_types; eauto.
+Qed.
+
+(* (* Do we need this one? *)
 
 Lemma prop_type_is_unique:
   forall g t s,
@@ -2356,50 +2365,4 @@ Proof.
   - absurd (typing g t2 s); auto.
     apply inversion_typing_conv_type.
     apply typing_unique_up_to_conv with g prop; eauto with coc.
-Qed.
-
-(*Lemma bar:
-  forall g e t1,
-  [g |- e: t1] ->
-  forall t2,
-  [t1 <=> t2] ->
-  forall s,
-  [g |- t2: s] -> [g |- t1: s].
-Proof.
-  induction 1; intros.
-  - absurd (typing g t2 s); auto.
-    apply inversion_typing_conv_type; eauto.
-  - edestruct well_founded_lift_has_sort; eauto.
-    + 
-Admitted.
-
-Lemma baz:
-  forall g e t,
-  [g |- e: t] ->
-  forall s,
-  [g |- t: s] -> [prop <=> s] \/ [type <=> s].
-Proof.
-  induction 1; intros.
-  - absurd (typing g type s); auto.
-    apply inversion_typing_conv_type; auto with coc.
-  - edestruct well_founded_lift_has_sort; eauto.
-    + left.
-      eapply conv_terms_imply_conv_types; eauto with coc.
-    + right.
-      eapply conv_terms_imply_conv_types; eauto with coc.
-  - absurd (typing g type s); auto.
-    apply inversion_typing_conv_type; auto with coc.
-  - absurd (typing g type s); auto.
-    apply inversion_typing_conv_type; auto with coc.
-  - right.
-    eapply conv_terms_imply_conv_types with g prop prop; eauto with coc.
-  - right.
-    eapply conv_terms_imply_conv_types with g prop prop; eauto with coc.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - apply IHtyping1.
-    eapply bar; eauto.
-Admitted.*)
+Qed. *)
