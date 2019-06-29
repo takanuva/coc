@@ -2131,8 +2131,7 @@ Lemma typing_preserved_under_step:
   forall e2,
   [e1 => e2] -> [g |- e2: t].
 Proof.
-  intros until 1.
-  dependent induction H; intros.
+  induction 1; intros.
   (* Case: typing_prop. *)
   - inversion H0.
   (* Case: typing_bound. *)
@@ -2215,7 +2214,9 @@ Qed.
 
 Hint Resolve subject_reduction: coc.
 
-Corollary conv_terms_imply_conv_types:
+(******************************************************************************)
+
+Lemma conv_terms_imply_conv_types:
   forall g e1 t1 e2 t2,
   [g |- e1: t1] -> [g |- e2: t2] -> [e1 <=> e2] -> [t1 <=> t2].
 Proof.
@@ -2226,6 +2227,59 @@ Proof.
   - apply subject_reduction with e1; auto.
   - apply subject_reduction with e2; auto.
 Qed.
+
+Hint Resolve conv_terms_imply_conv_types: coc.
+
+Lemma inversion_typing_conv_type:
+  forall g t s,
+  [type <=> t] -> ~[g |- t: s].
+Proof.
+  intros.
+  destruct step_is_church_rosser with type t; auto.
+  fold star in * |-.
+  destruct inversion_star_normal with type x; auto with coc.
+  intro; eapply inversion_typing_type.
+  apply subject_reduction with t; eauto.
+Qed.
+
+Lemma typing_preserved_under_star:
+  forall g e t1 t2,
+  [g |- e: t1] -> [t1 =>* t2] -> [g |- e: t2].
+Proof.
+  induction 1; intros.
+  (* Case: typing_prop. *)
+  - destruct inversion_star_normal with type t2; auto with coc.
+  (* Case: typing_bound. *)
+  - edestruct well_founded_lift_has_sort; eauto.
+    + eapply typing_conv; eauto with coc.
+    + eapply typing_conv; eauto with coc.
+  (* Case: typing_pi1. *)
+  - destruct inversion_star_normal with type t2; auto with coc.
+  (* Case: typing_pi2. *)
+  - destruct inversion_star_normal with type t2; auto with coc.
+  (* Case: typing_pi3. *)
+  - destruct inversion_star_normal with prop t2; auto with coc.
+  (* Case: typing_pi4. *)
+  - destruct inversion_star_normal with prop t2; auto with coc.
+  (* Case: typing_lambda1. *)
+  - eapply typing_conv; eauto with coc.
+  (* Case: typing_lambda2. *)
+  - eapply typing_conv; eauto with coc.
+  (* Case: typing_lambda3. *)
+  - eapply typing_conv; eauto with coc.
+  (* Case: typing_lambda4. *)
+  - eapply typing_conv; eauto with coc.
+  (* Case: typing_application. *)
+  - edestruct inversion_typing_typed_as_pi; eauto.
+    edestruct inversion_typing_pi; eauto; destruct H4.
+    eapply typing_conv; eauto with coc.
+  (* Case: typing_conv. *)
+  - eapply typing_conv; eauto with coc.
+Qed.
+
+Hint Resolve typing_preserved_under_star: coc.
+
+(******************************************************************************)
 
 (*Lemma typing_case:
   forall g e t,
@@ -2284,4 +2338,68 @@ Proof.
         eapply subject_reduction; eauto.
     + admit.
     + admit.
+Admitted.*)
+
+Lemma prop_type_is_unique:
+  forall g t s,
+  [prop <=> t] -> [g |- t: s] -> type = s.
+Proof.
+  intros.
+  destruct step_is_church_rosser with prop t; auto.
+  fold star in * |-.
+  destruct inversion_star_normal with prop x; auto with coc.
+  pose (subject_reduction _ _ H2 _ _ H0) as X.
+  dependent induction X.
+  (* Case: typing_prop. *)
+  - reflexivity.
+  (* Case: typing_conv. *)
+  - absurd (typing g t2 s); auto.
+    apply inversion_typing_conv_type.
+    apply typing_unique_up_to_conv with g prop; eauto with coc.
+Qed.
+
+(*Lemma bar:
+  forall g e t1,
+  [g |- e: t1] ->
+  forall t2,
+  [t1 <=> t2] ->
+  forall s,
+  [g |- t2: s] -> [g |- t1: s].
+Proof.
+  induction 1; intros.
+  - absurd (typing g t2 s); auto.
+    apply inversion_typing_conv_type; eauto.
+  - edestruct well_founded_lift_has_sort; eauto.
+    + 
+Admitted.
+
+Lemma baz:
+  forall g e t,
+  [g |- e: t] ->
+  forall s,
+  [g |- t: s] -> [prop <=> s] \/ [type <=> s].
+Proof.
+  induction 1; intros.
+  - absurd (typing g type s); auto.
+    apply inversion_typing_conv_type; auto with coc.
+  - edestruct well_founded_lift_has_sort; eauto.
+    + left.
+      eapply conv_terms_imply_conv_types; eauto with coc.
+    + right.
+      eapply conv_terms_imply_conv_types; eauto with coc.
+  - absurd (typing g type s); auto.
+    apply inversion_typing_conv_type; auto with coc.
+  - absurd (typing g type s); auto.
+    apply inversion_typing_conv_type; auto with coc.
+  - right.
+    eapply conv_terms_imply_conv_types with g prop prop; eauto with coc.
+  - right.
+    eapply conv_terms_imply_conv_types with g prop prop; eauto with coc.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - apply IHtyping1.
+    eapply bar; eauto.
 Admitted.*)
