@@ -813,7 +813,7 @@ Lemma parallel_refl:
   forall e,
   parallel e e.
 Proof.
-  simple induction e; auto with coc.
+  induction e; auto with coc.
 Qed.
 
 Hint Resolve parallel_refl: coc.
@@ -833,31 +833,27 @@ Lemma parallel_lift:
   forall i k,
   parallel (lift i k a) (lift i k b).
 Proof.
-  simple induction 1.
+  induction 1; intros.
   (* Case: parallel_beta. *)
-  - intros.
-    rewrite lift_distributes_over_application.
+  - rewrite lift_distributes_over_application.
     rewrite lift_distributes_over_lambda.
     rewrite lift_distributes_over_subst.
-    auto with coc.
+    apply parallel_beta; auto.
   (* Case: parallel_type. *)
-  - auto with coc.
+  - apply parallel_type.
   (* Case: parallel_prop. *)
-  - auto with coc.
+  - apply parallel_prop.
   (* Case: parallel_bound. *)
-  - auto with coc.
+  - apply parallel_refl.
   (* Case: parallel_pi. *)
-  - intros.
-    do 2 rewrite lift_distributes_over_pi.
-    auto with coc.
+  - do 2 rewrite lift_distributes_over_pi.
+    apply parallel_pi; auto.
   (* Case: parallel_lambda. *)
-  - intros.
-    do 2 rewrite lift_distributes_over_lambda.
-    auto with coc.
+  - do 2 rewrite lift_distributes_over_lambda.
+    apply parallel_lambda; auto.
   (* Case: parallel_application. *)
-  - intros.
-    do 2 rewrite lift_distributes_over_application.
-    auto with coc.
+  - do 2 rewrite lift_distributes_over_application.
+    apply parallel_application; auto.
 Qed.
 
 Hint Resolve parallel_lift: coc.
@@ -870,33 +866,31 @@ Lemma parallel_subst:
   forall k,
   parallel (subst c k a) (subst d k b).
 Proof.
-  simple induction 1.
+  induction 1; intros.
   (* Case: parallel_beta. *)
-  - intros.
-    rewrite subst_distributes_over_application.
+  - rewrite subst_distributes_over_application.
     rewrite subst_distributes_over_lambda.
     rewrite subst_distributes_over_itself.
-    auto with coc.
+    apply parallel_beta; auto.
   (* Case: parallel_type. *)
-  - auto with coc.
+  - apply parallel_type.
   (* Case: parallel_prop. *)
-  - auto with coc.
+  - apply parallel_prop.
   (* Case: parallel_bound. *)
-  - intros.
-    unfold subst.
-    destruct (lt_eq_lt_dec k n) as [ [ ? | ? ] | ? ]; auto with coc.
+  - unfold subst.
+    destruct (lt_eq_lt_dec k n) as [ [ ? | ? ] | ? ].
+    + apply parallel_refl.
+    + apply parallel_lift; auto.
+    + apply parallel_refl.
   (* Case: parallel_pi. *)
-  - intros.
-    do 2 rewrite subst_distributes_over_pi.
-    auto with coc.
+  - do 2 rewrite subst_distributes_over_pi.
+    apply parallel_pi; auto.
   (* Case: parallel_lambda. *)
-  - intros.
-    do 2 rewrite subst_distributes_over_lambda.
-    auto with coc.
+  - do 2 rewrite subst_distributes_over_lambda.
+    apply parallel_lambda; auto.
   (* Case: parallel_application. *)
-  - intros.
-    do 2 rewrite subst_distributes_over_application.
-    auto with coc.
+  - do 2 rewrite subst_distributes_over_application.
+    apply parallel_application; auto.
 Qed.
 
 Hint Resolve parallel_subst: coc.
@@ -905,16 +899,16 @@ Lemma star_parallel:
   forall a b,
   parallel a b -> [a =>* b].
 Proof.
-  simple induction 1; intros.
+  induction 1; intros.
   (* Case: parallel_beta. *)
   - eapply star_tran.
     eapply star_tran.
-    apply star_application_left.
-    apply star_lambda_right.
-    exact H1.
-    apply star_application_right.
-    exact H3.
-    apply star_beta.
+    + apply star_application_left.
+      apply star_lambda_right.
+      eassumption.
+    + apply star_application_right.
+      eassumption.
+    + apply star_beta.
   (* Case: parallel_type. *)
   - auto with coc.
   (* Case: parallel_prop. *)
@@ -937,8 +931,7 @@ Lemma star_subst_left:
   forall x,
   [b1[x/] =>* b2[x/]].
 Proof.
-  intros until 1.
-  dependent induction H; eauto with coc.
+  induction 1; eauto with coc.
 Qed.
 
 Hint Resolve star_subst_left: coc.
@@ -949,8 +942,7 @@ Lemma star_subst_right:
   forall b,
   [b[x1/] =>* b[x2/]].
 Proof.
-  intros until 1.
-  dependent induction H; eauto with coc.
+  induction 1; eauto with coc.
 Qed.
 
 Hint Resolve star_subst_right: coc.
