@@ -119,20 +119,11 @@ Proof.
   - simpl.
     destruct (le_gt_dec k n); reflexivity.
   (* Case: pi. *)
-  - simpl.
-    rewrite (IHe1 k).
-    rewrite (IHe2 (S k)).
-    reflexivity.
+  - simpl; f_equal; auto.
   (* Case: lambda. *)
-  - simpl.
-    rewrite (IHe1 k).
-    rewrite (IHe2 (S k)).
-    reflexivity.
+  - simpl; f_equal; auto.
   (* Case: application. *)
-  - simpl.
-    rewrite (IHe1 k).
-    rewrite (IHe2 k).
-    reflexivity.
+  - simpl; f_equal; auto.
 Qed.
 
 Lemma lift_bound_ge:
@@ -215,18 +206,18 @@ Proof.
     + rewrite lift_bound_lt; eauto with arith.
   (* Case: pi. *)
   - simpl; f_equal.
-    rewrite IHe1; auto.
-    rewrite IHe2; auto with arith.
-    eauto with arith.
+    + rewrite IHe1; auto.
+    + rewrite IHe2; auto with arith.
+      eauto with arith.
   (* Case: lambda. *)
   - simpl; f_equal.
-    rewrite IHe1; auto.
-    rewrite IHe2; auto with arith.
-    eauto with arith.
+    + rewrite IHe1; auto.
+    + rewrite IHe2; auto with arith.
+      eauto with arith.
   (* Case: application. *)
   - simpl; f_equal.
-    rewrite IHe1; auto.
-    rewrite IHe2; auto with arith.
+    + rewrite IHe1; auto.
+    + rewrite IHe2; auto.
 Qed.
 
 Lemma lift_lift_permutation:
@@ -242,9 +233,9 @@ Proof.
   - simpl.
     destruct (le_gt_dec l n); destruct (le_gt_dec k n); intros.
     + rewrite lift_bound_ge.
-      rewrite lift_bound_ge; auto with arith.
-      do 2 elim plus_assoc_reverse; auto with arith.
-      eapply le_trans; eauto with arith.
+      * rewrite lift_bound_ge; auto with arith.
+        do 2 elim plus_assoc_reverse; auto with arith.
+      * eapply le_trans; eauto with arith.
     + absurd (k <= n); eauto with arith.
     + rewrite lift_bound_ge; auto.
       rewrite lift_bound_lt; auto.
@@ -254,18 +245,18 @@ Proof.
       eauto with arith.
   (* Case: pi. *)
   - simpl; f_equal.
-    apply IHe1; auto.
-    replace (S (i + l)) with (i + S l); auto.
-    apply IHe2; auto with arith.
+    + apply IHe1; auto.
+    + replace (S (i + l)) with (i + S l); auto.
+      apply IHe2; auto with arith.
   (* Case: lambda. *)
   - simpl; f_equal.
-    apply IHe1; auto.
-    replace (S (i + l)) with (i + S l); auto.
-    apply IHe2; auto with arith.
+    + apply IHe1; auto.
+    + replace (S (i + l)) with (i + S l); auto.
+      apply IHe2; auto with arith.
   (* Case: application. *)
   - simpl; f_equal.
-    apply IHe1; auto.
-    apply IHe2; auto.
+    + apply IHe1; auto.
+    + apply IHe2; auto.
 Qed.
 
 (** ** Substitution *)
