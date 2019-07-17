@@ -6,6 +6,7 @@
 Require Import Arith.
 Require Import Compare_dec.
 Require Import Relations.
+Require Import Union.
 Require Import Equality.
 
 (** ** Syntax
@@ -1283,6 +1284,19 @@ Proof.
   edestruct subterm_and_step_commute; eauto.
 Qed.
 
+Lemma subterm_is_well_founded:
+  well_founded subterm.
+Proof.
+  intro.
+  induction a; constructor; intros.
+  - inversion H.
+  - inversion H.
+  - inversion H.
+  - inversion H; auto.
+  - inversion H; auto.
+  - inversion H; auto.
+Qed.
+
 Lemma inversion_star_normal:
   forall a b,
   [a =>* b] -> normal a -> a = b.
@@ -1312,6 +1326,15 @@ Qed.
 
 Hint Resolve prop_is_normal: coc.
 
+Lemma bound_is_normal:
+  forall n,
+  normal (bound n).
+Proof.
+  inversion 1.
+Qed.
+
+Hint Resolve bound_is_normal: coc.
+
 Lemma normal_form_is_unique:
   forall a b,
   [a <=> b] -> normal a -> normal b -> a = b.
@@ -1321,6 +1344,20 @@ Proof.
   - assumption.
   - destruct inversion_star_normal with a x; auto.
     destruct inversion_star_normal with b a; auto.
+Qed.
+
+Definition smaller :=
+  union _ subterm (transp _ step).
+
+Lemma smaller_is_well_founded:
+  forall e,
+  strongly_normalizing e -> Acc smaller e.
+Proof.
+  compute; intros.
+  apply Acc_union; intros.
+  - exact subterm_and_step_commute.
+  - apply subterm_is_well_founded.
+  - assumption.
 Qed.
 
 (******************************************************************************)
@@ -2349,3 +2386,5 @@ Proof.
     apply inversion_typing_conv_type.
     apply typing_unique_up_to_conv with g prop; eauto with coc.
 Qed. *)
+
+(******************************************************************************)
